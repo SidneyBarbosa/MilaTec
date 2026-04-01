@@ -1,0 +1,52 @@
+:root {
+  /* Palette */
+  --blue-900: #0b1f4d;
+  --blue-800: #123064;
+  --blue-700: #1e3a8a;
+  --green-600: #00a86b;
+  --green-400: #2ed3a0;
+  --gray-50: #f5f7fa;
+  --gray-100: #eef1f7;
+  --white: #ffffff;
+
+  /* Semantic */
+  --sidebar: #0b1f4d;
+  --page-bg: #f4f6fb;
+  --card: #ffffff;
+  --primary: #1e3a8a;
+  --primary-strong: #0b1f4d;
+  --accent: #00a86b;
+  --accent-soft: #2ed3a0;
+  --text: #0f1e43;
+  --text-strong: #0b1f4d;
+  --muted: #6b7280;
+  --stroke: #e5eaf3;
+  --overlay: rgba(11, 31, 77, 0.75);
+
+  /* Spacing scale */
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+
+  /* Radius */
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 18px;
+
+  /* Shadows */
+  --shadow-sm: 0 6px 18px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 10px 26px rgba(20, 35, 70, 0.16);
+  --shadow-lg: 0 16px 40px rgba(20, 35, 70, 0.18);
+
+  /* Typography */
+  --font-family: 'Poppins', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --fs-xs: 12px;
+  --fs-sm: 14px;
+  --fs-md: 15px;
+  --fs-lg: 18px;
+  --fs-xl: 24px;
+  --fs-2xl: 32px;
+}
