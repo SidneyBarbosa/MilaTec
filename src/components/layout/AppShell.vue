@@ -75,9 +75,9 @@
         <div class="topbar__profile">
           <div class="topbar__profile-copy">
             <span class="topbar__profile-label">Cliente</span>
-            <strong>Joao Silva</strong>
+            <strong>joao miguel</strong>
           </div>
-          <div class="topbar__avatar">JS</div>
+          <div class="topbar__avatar">JM</div>
         </div>
       </header>
 
@@ -91,7 +91,7 @@
 <script setup>
 import { computed } from 'vue';
 import { RouterLink, useRoute } from 'vue-router';
-import logo from '@/assets/milatec_transparent.png';
+import logo from '@/assets/logo-milatec-BRtuGoQK.jpg (1).jpeg';
 
 const route = useRoute();
 
@@ -138,7 +138,8 @@ const currentTitle = computed(() => route.meta?.title || 'Dashboard');
 .sidebar__brand-logo {
   width: 36px;
   height: 36px;
-  object-fit: contain;
+  object-fit: cover;
+  border-radius: 8px;
 }
 
 .sidebar__brand-copy strong {

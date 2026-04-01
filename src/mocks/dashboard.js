@@ -21,7 +21,7 @@ export const summaryCards = [
     label: 'Documentos',
     value: '24 arquivos',
     detail: '3 novos esta semana',
-    accent: '#F5F7FA',
+    accent: '#0B1F4D',
   },
 ];
 
