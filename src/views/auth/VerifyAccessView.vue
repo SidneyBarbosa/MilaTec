@@ -1,5 +1,5 @@
-﻿<template>
-  <section class="verify glass">
+<template>
+  <section class="verify">
     <div class="verify__brand">
       <div class="brand-lockup">
         <img :src="logo" alt="MilaTec" class="brand-lockup__icon" />
@@ -7,19 +7,25 @@
           <strong>MilaTec</strong>
         </div>
       </div>
-      <p class="pill">Validacao</p>
+      <p class="pill">Validacao de perfil</p>
     </div>
 
     <div class="verify__content">
       <header>
-        <p class="eyebrow">Plataforma MilaTec</p>
-        <h1>Validacao de acesso</h1>
+        <p class="eyebrow">Confirmacao de acesso</p>
+        <h1>Confirme o codigo e entre na area correta</h1>
         <p class="subtitle">
-          Enviamos um codigo de 6 digitos para seu e-mail. Digite abaixo para continuar.
+          Confirme o codigo para acessar sua area e continuar com o perfil selecionado.
         </p>
       </header>
 
-      <form class="verify__form" @submit.prevent>
+      <div class="verify__identity">
+        <span class="verify__identity-pill">{{ selectedProfile.areaLabel }}</span>
+        <strong>{{ requestedEmail }}</strong>
+        <p>{{ selectedProfile.description }}</p>
+      </div>
+
+      <form class="verify__form" @submit.prevent="onSubmit">
         <BaseInput
           v-model="code"
           label="Codigo de validacao"
@@ -32,7 +38,7 @@
         />
 
         <BaseButton size="lg" block>
-          Entrar
+          Entrar na plataforma
         </BaseButton>
 
         <div class="actions">
@@ -47,23 +53,44 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
-import { RouterLink } from 'vue-router';
+import { computed, ref } from 'vue';
+import { RouterLink, useRoute, useRouter } from 'vue-router';
 import BaseButton from '@/components/common/BaseButton.vue';
 import BaseInput from '@/components/common/BaseInput.vue';
+import { profileOptions, resolveDefaultRoute, signIn } from '@/composables/useSession';
 import logo from '@/assets/logo-milatec-BRtuGoQK.jpg (1).jpeg';
 
+const route = useRoute();
+const router = useRouter();
 const code = ref('');
 
+const requestedRole = computed(() => (route.query.role === 'admin' ? 'admin' : 'client'));
+const selectedProfile = computed(
+  () => profileOptions.find((profile) => profile.role === requestedRole.value) || profileOptions[0],
+);
+const requestedEmail = computed(() => {
+  const email = typeof route.query.email === 'string' ? route.query.email : '';
+  return email || selectedProfile.value.defaultEmail;
+});
+
+const onSubmit = () => {
+  signIn({
+    role: requestedRole.value,
+    email: requestedEmail.value,
+  });
+
+  router.push(resolveDefaultRoute(requestedRole.value));
+};
+
 const onResend = () => {
-  // fluxo mockado
+  code.value = '';
 };
 </script>
 
 <style scoped>
 .verify {
-  padding: 28px 26px;
-  border-radius: 16px;
+  padding: 30px 28px;
+  border-radius: 24px;
   background: #ffffff;
   border: 1px solid #e5eaf3;
   box-shadow: 0 16px 36px rgba(12, 26, 58, 0.18);
@@ -120,7 +147,7 @@ const onResend = () => {
 }
 
 h1 {
-  color: #0b1f4d;
+  color: var(--text-strong);
   margin-bottom: 8px;
 }
 
@@ -128,6 +155,38 @@ h1 {
   color: #4a5672;
   font-size: var(--fs-md);
   line-height: 1.6;
+}
+
+.verify__identity {
+  margin-top: var(--space-4);
+  padding: 16px;
+  border-radius: 18px;
+  background: #f6f9ff;
+  border: 1px solid #dbe5f4;
+}
+
+.verify__identity-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: rgba(0, 163, 74, 0.12);
+  color: #00a34a;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.verify__identity strong {
+  display: block;
+  margin-top: 10px;
+  color: var(--text-strong);
+}
+
+.verify__identity p {
+  margin-top: 6px;
 }
 
 .verify__form {
@@ -152,7 +211,7 @@ h1 {
 }
 
 .back-link {
-  color: #1e3a8a;
+  color: var(--primary);
   font-weight: 600;
 }
 

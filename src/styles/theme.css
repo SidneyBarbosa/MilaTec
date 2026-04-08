@@ -1,27 +1,27 @@
 :root {
   /* Palette */
-  --blue-900: #0b1f4d;
-  --blue-800: #123064;
-  --blue-700: #1e3a8a;
-  --green-600: #00a86b;
-  --green-400: #2ed3a0;
-  --gray-50: #f5f7fa;
-  --gray-100: #eef1f7;
-  --white: #ffffff;
+  --blue-900: #050866;
+  --blue-800: #0632b0;
+  --blue-700: #004ae8;
+  --green-600: #00a34a;
+  --green-400: #44c878;
+  --gray-50: #f6f7f8;
+  --gray-100: #edf0f6;
+  --white: #f6f7f8;
 
   /* Semantic */
-  --sidebar: #0b1f4d;
-  --page-bg: #f4f6fb;
+  --sidebar: #050866;
+  --page-bg: #f6f7f8;
   --card: #ffffff;
-  --primary: #1e3a8a;
-  --primary-strong: #0b1f4d;
-  --accent: #00a86b;
-  --accent-soft: #2ed3a0;
-  --text: #0f1e43;
-  --text-strong: #0b1f4d;
-  --muted: #6b7280;
-  --stroke: #e5eaf3;
-  --overlay: rgba(11, 31, 77, 0.75);
+  --primary: #004ae8;
+  --primary-strong: #050866;
+  --accent: #00a34a;
+  --accent-soft: #44c878;
+  --text: #15204a;
+  --text-strong: #050866;
+  --muted: #64708c;
+  --stroke: #dde4f0;
+  --overlay: rgba(5, 8, 102, 0.76);
 
   /* Spacing scale */
   --space-2: 8px;
@@ -38,8 +38,8 @@
 
   /* Shadows */
   --shadow-sm: 0 6px 18px rgba(0, 0, 0, 0.08);
-  --shadow-md: 0 10px 26px rgba(20, 35, 70, 0.16);
-  --shadow-lg: 0 16px 40px rgba(20, 35, 70, 0.18);
+  --shadow-md: 0 10px 26px rgba(5, 8, 102, 0.14);
+  --shadow-lg: 0 16px 40px rgba(5, 8, 102, 0.18);
 
   /* Typography */
   --font-family: 'Poppins', system-ui, -apple-system, 'Segoe UI', sans-serif;

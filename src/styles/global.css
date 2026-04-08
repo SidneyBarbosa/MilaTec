@@ -96,3 +96,103 @@ p {
 .card {
   font-family: inherit;
 }
+
+#app {
+  min-height: 100vh;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+ul,
+ol {
+  margin: 0;
+}
+
+.page {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.page__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.page__header-copy {
+  display: grid;
+  gap: 8px;
+  max-width: 760px;
+}
+
+.page__kicker {
+  margin: 0;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--primary);
+  font-weight: 700;
+}
+
+.page__subtitle {
+  max-width: 720px;
+}
+
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-4);
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  border: 1px solid transparent;
+}
+
+.status-badge--success {
+  color: #00853c;
+  border-color: rgba(0, 163, 74, 0.24);
+  background: rgba(0, 163, 74, 0.12);
+}
+
+.status-badge--info,
+.status-badge--document {
+  color: #004ae8;
+  border-color: rgba(0, 74, 232, 0.2);
+  background: rgba(0, 74, 232, 0.1);
+}
+
+.status-badge--warning,
+.status-badge--milestone,
+.status-badge--attention {
+  color: #b7791f;
+  border-color: rgba(183, 121, 31, 0.22);
+  background: rgba(183, 121, 31, 0.12);
+}
+
+.status-badge--critical {
+  color: #c2415d;
+  border-color: rgba(194, 65, 93, 0.24);
+  background: rgba(194, 65, 93, 0.12);
+}
+
+.status-badge--delivery,
+.status-badge--safe {
+  color: #00853c;
+  border-color: rgba(0, 163, 74, 0.2);
+  background: rgba(0, 163, 74, 0.12);
+}

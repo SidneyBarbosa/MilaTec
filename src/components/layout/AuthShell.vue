@@ -13,8 +13,8 @@
   display: grid;
   place-items: center;
   position: relative;
-  background: radial-gradient(140% 140% at 15% 20%, rgba(46, 211, 160, 0.12), transparent 45%),
-    linear-gradient(135deg, #0b1f4d 0%, #163b66 50%, #0b1f4d 100%);
+  background: radial-gradient(140% 140% at 15% 20%, rgba(0, 163, 74, 0.14), transparent 45%),
+    linear-gradient(135deg, #050866 0%, #0632b0 54%, #004ae8 100%);
   overflow: hidden;
 }
 

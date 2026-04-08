@@ -7,7 +7,7 @@
 <script setup>
 import { computed } from 'vue';
 import { useRoute, RouterView } from 'vue-router';
-import AppShell from './components/layout/AppShell.vue';
+import AppShell from './components/layout/PortalShell.vue';
 import AuthShell from './components/layout/AuthShell.vue';
 
 const route = useRoute();

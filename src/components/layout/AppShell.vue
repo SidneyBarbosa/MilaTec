@@ -18,35 +18,7 @@
           :class="{ 'sidebar__item--active': isActive(item.to) }"
         >
           <span class="sidebar__item-glow" />
-          <span class="sidebar__item-icon" aria-hidden="true">
-            <svg v-if="item.icon === 'dashboard'" viewBox="0 0 24 24" fill="none">
-              <rect x="3.5" y="3.5" width="7" height="7" rx="1.5" />
-              <rect x="13.5" y="3.5" width="7" height="7" rx="1.5" />
-              <rect x="3.5" y="13.5" width="7" height="7" rx="1.5" />
-              <rect x="13.5" y="13.5" width="7" height="7" rx="1.5" />
-            </svg>
-            <svg v-else-if="item.icon === 'orcamentos'" viewBox="0 0 24 24" fill="none">
-              <rect x="3.5" y="6.5" width="17" height="11" rx="2" />
-              <path d="M7 12h10" />
-              <path d="M7 9.5h2.5" />
-            </svg>
-            <svg v-else-if="item.icon === 'projetos'" viewBox="0 0 24 24" fill="none">
-              <path d="M7 3.5h7l5 5v12a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-15a2 2 0 0 1 2-2Z" />
-              <path d="M14 3.5v5h5" />
-            </svg>
-            <svg v-else-if="item.icon === 'entregas'" viewBox="0 0 24 24" fill="none">
-              <path d="M3.5 7.5h11v8h-11z" />
-              <path d="M14.5 10h3l2 2.5V15h-5Z" />
-              <circle cx="8" cy="18" r="1.75" />
-              <circle cx="17" cy="18" r="1.75" />
-            </svg>
-            <svg v-else viewBox="0 0 24 24" fill="none">
-              <path d="M7 3.5h7l5 5v12a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-15a2 2 0 0 1 2-2Z" />
-              <path d="M14 3.5v5h5" />
-              <path d="M8 13h8" />
-              <path d="M8 16h5" />
-            </svg>
-          </span>
+          <span class="material-icons sidebar__item-icon" aria-hidden="true">{{ item.icon }}</span>
           <span class="sidebar__item-label">{{ item.label }}</span>
         </RouterLink>
       </nav>
@@ -97,10 +69,10 @@ const route = useRoute();
 
 const menu = [
   { label: 'Dashboard', to: '/', icon: 'dashboard' },
-  { label: 'Orcamentos', to: '/orcamentos', icon: 'orcamentos' },
-  { label: 'Projetos', to: '/projetos', icon: 'projetos' },
-  { label: 'Entregas', to: '/entregas', icon: 'entregas' },
-  { label: 'Documentos', to: '/documentos', icon: 'documentos' },
+  { label: 'Orcamentos', to: '/orcamentos', icon: 'request_quote' },
+  { label: 'Projetos', to: '/projetos', icon: 'folder' },
+  { label: 'Entregas', to: '/entregas', icon: 'local_shipping' },
+  { label: 'Documentos', to: '/documentos', icon: 'attach_file' },
 ];
 
 const isActive = (path) => route.path === path;
@@ -166,7 +138,7 @@ const currentTitle = computed(() => route.meta?.title || 'Dashboard');
 .sidebar__item {
   position: relative;
   display: grid;
-  grid-template-columns: 18px 18px 1fr;
+  grid-template-columns: 18px 22px 1fr;
   align-items: center;
   gap: 10px;
   min-height: 48px;
@@ -203,13 +175,26 @@ const currentTitle = computed(() => route.meta?.title || 'Dashboard');
 
 .sidebar__item-icon,
 .sidebar__logout-icon {
-  width: 18px;
-  height: 18px;
-  display: inline-grid;
-  place-items: center;
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.sidebar__item-icon svg,
+.sidebar__item-icon {
+  color: rgba(225, 236, 255, 0.92);
+  font-size: 22px;
+  line-height: 1;
+  font-family: 'Material Icons';
+  font-weight: 400;
+  font-style: normal;
+  user-select: none;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: 'liga';
+}
+
 .sidebar__logout-icon svg {
   width: 18px;
   height: 18px;
@@ -220,8 +205,8 @@ const currentTitle = computed(() => route.meta?.title || 'Dashboard');
   opacity: 0.78;
 }
 
-.sidebar__item--active .sidebar__item-icon svg {
-  opacity: 1;
+.sidebar__item--active .sidebar__item-icon {
+  color: #ffffff;
 }
 
 .sidebar__item-label {

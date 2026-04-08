@@ -1,7 +1,12 @@
 ﻿<template>
   <section class="login-card">
     <div class="login__brand">
-      <img :src="logo" alt="MilaTec" />
+      <div class="brand-lockup">
+        <img :src="logo" alt="MilaTec" class="brand-lockup__icon" />
+        <div class="brand-lockup__copy">
+          <strong>MilaTec</strong>
+        </div>
+      </div>
       <span class="badge">Acesso seguro</span>
     </div>
 
@@ -34,7 +39,7 @@
 import { ref } from 'vue';
 import BaseButton from '@/components/common/BaseButton.vue';
 import BaseInput from '@/components/common/BaseInput.vue';
-import logo from '@/assets/milatec_transparent.png';
+import logo from '@/assets/logo-milatec-BRtuGoQK.jpg (1).jpeg';
 
 const email = ref('');
 </script>
@@ -58,11 +63,33 @@ const email = ref('');
   gap: 10px;
 }
 
-.login__brand img {
-  width: 170px;
-  max-width: 100%;
-  object-fit: contain;
-  filter: drop-shadow(0 10px 24px rgba(11, 31, 77, 0.3));
+.brand-lockup {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  width: 100%;
+  padding: 14px 18px;
+  border-radius: 20px;
+  background: linear-gradient(180deg, #f7faff 0%, #eef4ff 100%);
+  border: 1px solid #dbe5f4;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.84);
+}
+
+.brand-lockup__icon {
+  width: 58px;
+  height: 58px;
+  object-fit: cover;
+  border-radius: 16px;
+  box-shadow: 0 14px 26px rgba(5, 8, 102, 0.18);
+}
+
+.brand-lockup__copy strong {
+  display: block;
+  color: #050866;
+  font-size: 30px;
+  line-height: 1;
+  letter-spacing: -0.02em;
 }
 
 .badge {

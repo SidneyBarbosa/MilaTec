@@ -99,16 +99,16 @@ const localValue = computed({
 }
 
 .field.light .field__label {
-  color: #0b1f4d;
+  color: var(--text-strong);
 }
 
 .field.light .field__control {
-  background: #f5f7fa;
-  border: 1px solid #d7deeb;
+  background: var(--gray-50);
+  border: 1px solid #d3dbeb;
 }
 
 .field.light .input {
-  color: #0b1f4d;
+  color: var(--text-strong);
 }
 
 .field.light:hover .field__control {
@@ -117,7 +117,7 @@ const localValue = computed({
 
 .field.light:focus-within .field__control {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(0, 168, 107, 0.2);
+  box-shadow: 0 0 0 3px rgba(0, 163, 74, 0.18);
 }
 
 .helper {
