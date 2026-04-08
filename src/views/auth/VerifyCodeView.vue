@@ -7,22 +7,22 @@
           <strong>MilaTec</strong>
         </div>
       </div>
-      <p class="pill">Validacao</p>
+      <p class="pill">Validação</p>
     </div>
 
     <div class="verify__content">
       <header>
         <p class="eyebrow">Plataforma MilaTec</p>
-        <h1>Validacao de acesso</h1>
+        <h1>Validação de acesso</h1>
         <p class="subtitle">
-          Enviamos um codigo de 6 digitos para seu e-mail. Digite abaixo para continuar.
+          Enviamos um código de 6 dígitos para seu e-mail. Digite abaixo para continuar.
         </p>
       </header>
 
       <form class="verify__form" @submit.prevent>
         <BaseInput
           v-model="code"
-          label="Codigo de validacao"
+          label="Código de validação"
           placeholder="000000"
           maxlength="6"
           inputmode="numeric"
@@ -37,7 +37,7 @@
 
         <div class="actions">
           <BaseButton variant="ghost" size="sm" @click.prevent="onResend">
-            Reenviar codigo
+            Reenviar código
           </BaseButton>
           <RouterLink to="/login" class="back-link">Voltar</RouterLink>
         </div>
@@ -171,3 +171,4 @@ h1 {
   }
 }
 </style>
+

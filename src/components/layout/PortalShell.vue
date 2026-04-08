@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="shell" :class="`shell--${currentRole}`">
     <aside class="sidebar">
       <RouterLink :to="homeLink" class="sidebar__brand-card">
@@ -8,7 +8,7 @@
         </div>
       </RouterLink>
 
-      <nav class="sidebar__menu" aria-label="Navegacao principal">
+      <nav class="sidebar__menu" aria-label="Navegação principal">
         <RouterLink
           v-for="item in currentMenu"
           :key="item.to"
@@ -31,7 +31,7 @@
         </div>
 
         <button type="button" class="sidebar__logout" @click="onSignOut">
-          Encerrar sessao
+          Encerrar sessão
         </button>
       </div>
     </aside>
@@ -432,3 +432,5 @@ const onSignOut = () => {
   }
 }
 </style>
+
+

@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="page">
     <BaseCard class="meta-card" variant="flat">
       <span class="pill">{{ platform.mode }}</span>
@@ -69,7 +69,7 @@
       <BaseCard>
         <template #header>
           <div>
-            <p class="pill">Politicas do painel</p>
+            <p class="pill">Políticas do painel</p>
             <h3>O que esta sendo garantido</h3>
           </div>
         </template>
@@ -176,3 +176,4 @@ const { summaryCards, progressSteps, updates, overviewMessage, readOnlyNotices }
   }
 }
 </style>
+

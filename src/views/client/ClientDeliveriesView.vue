@@ -12,7 +12,7 @@
 
     <BaseCard variant="flat">
       <p>
-        O painel nao permite editar datas ou anexos. Toda mudanca de entrega continua dependente da atualizacao do Airtable e de nova leitura da API.
+        O painel não permite editar datas ou anexos. Toda mudança de entrega continua dependente da atualização do Airtable e de nova leitura da API.
       </p>
     </BaseCard>
   </div>
@@ -47,4 +47,5 @@ small {
   font-weight: 600;
 }
 </style>
+
 

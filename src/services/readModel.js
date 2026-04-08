@@ -1,10 +1,10 @@
-const platformMeta = {
+﻿const platformMeta = {
   source: 'Airtable',
   apiLayer: 'MilaTec Read API',
   mode: 'Somente leitura',
   syncedAt: '01/04/2026 17:40',
   flow: [
-    'Airtable continua como a unica fonte de verdade para clientes, projetos, documentos e marcos.',
+    'Airtable continua como a única fonte de verdade para clientes, projetos, documentos e marcos.',
     'A API MilaTec organiza os dados, aplica mascaramento e entrega apenas o payload liberado por perfil.',
     'O frontend apenas consulta e renderiza a leitura autorizada para cliente ou administrador.',
   ],
@@ -15,39 +15,39 @@ const clientReadModel = {
     eyebrow: 'Portal do cliente',
     title: 'Acompanhamento do projeto em tempo real',
     description:
-      'O cliente consulta apenas a versao homologada dos dados. Toda consolidacao acontece no Airtable e a API publica somente os campos necessarios para leitura.',
+      'O cliente consulta apenas a versão homologada dos dados. Toda consolidação acontece no Airtable e a API publica somente os campos necessários para leitura.',
   },
   summaryCards: [
     {
       label: 'Projeto monitorado',
-      value: 'Metalica 440',
+      value: 'Metálica 440',
       detail: 'Escopo liberado pela API para este perfil',
       accent: '#0B1F4D',
     },
     {
       label: 'Fase atual',
-      value: 'Execucao estrutural',
+      value: 'Execução estrutural',
       detail: 'Etapa 3 de 5 registrada no Airtable',
       accent: '#1E3A8A',
     },
     {
-      label: 'Proxima entrega',
-      value: 'Estrutura metalica',
+      label: 'Próxima entrega',
+      value: 'Estrutura metálica',
       detail: 'Publicada para 12/04/2026',
       accent: '#00A86B',
     },
     {
       label: 'Documentos liberados',
       value: '18 arquivos',
-      detail: '4 atualizados no ultimo sync',
+      detail: '4 atualizados no último sync',
       accent: '#2ED3A0',
     },
   ],
   progressSteps: [
     { key: 'briefing', label: 'Briefing validado', status: 'done' },
-    { key: 'orcamento', label: 'Orcamento homologado', status: 'done' },
-    { key: 'execucao', label: 'Execucao estrutural', status: 'current' },
-    { key: 'instalacoes', label: 'Instalacoes finais', status: 'todo' },
+    { key: 'orcamento', label: 'Orçamento homologado', status: 'done' },
+    { key: 'execucao', label: 'Execução estrutural', status: 'current' },
+    { key: 'instalacoes', label: 'Instalações finais', status: 'todo' },
     { key: 'entrega', label: 'Entrega assistida', status: 'todo' },
   ],
   updates: [
@@ -55,35 +55,35 @@ const clientReadModel = {
       title: 'Cronograma executivo publicado pela API',
       date: '01/04 17:40',
       type: 'document',
-      detail: 'Versao cliente sanitizada do Airtable.',
+      detail: 'Versão cliente sanitizada do Airtable.',
     },
     {
-      title: 'Marco Fundacoes finalizado',
+      title: 'Marco Fundações finalizado',
       date: '31/03 18:05',
       type: 'milestone',
-      detail: 'Conclusao homologada pela equipe MilaTec.',
+      detail: 'Conclusão homologada pela equipe MilaTec.',
     },
     {
-      title: 'Entrega Estrutura metalica confirmada',
+      title: 'Entrega Estrutura metálica confirmada',
       date: '30/03 09:20',
       type: 'delivery',
-      detail: 'Janela atualizada no calendario publico do cliente.',
+      detail: 'Janela atualizada no calendário público do cliente.',
     },
   ],
   overviewMessage:
-    'Seu painel exibe apenas informacoes aprovadas para consulta. Custos internos, comentarios operacionais e identificadores de base continuam protegidos na camada Airtable + API.',
+    'Seu painel exibe apenas informações aprovadas para consulta. Custos internos, comentários operacionais e identificadores de base continuam protegidos na camada Airtable + API.',
   readOnlyNotices: [
     {
       title: 'Sem escrita operacional no frontend',
-      description: 'Pedidos de alteracao seguem fora do painel. Aqui o cliente apenas consulta o status homologado.',
+      description: 'Pedidos de alteração seguem fora do painel. Aqui o cliente apenas consulta o status homologado.',
     },
     {
-      title: 'Payload reduzido ao necessario',
-      description: 'A API remove colunas internas, observacoes sensiveis e referencias tecnicas que nao pertencem a visao do cliente.',
+      title: 'Payload reduzido ao necessário',
+      description: 'A API remove colunas internas, observações sensíveis e referências técnicas que não pertencem à visão do cliente.',
     },
     {
       title: 'Escopo limitado por perfil',
-      description: 'Cada rota valida o perfil e mostra somente o projeto vinculado ao usuario autenticado.',
+      description: 'Cada rota valida o perfil e mostra somente o projeto vinculado ao usuário autenticado.',
     },
   ],
   budgets: [
@@ -93,59 +93,59 @@ const clientReadModel = {
       value: 'R$ 8.400.000',
       statusLabel: 'Homologado',
       statusTone: 'success',
-      scope: 'Valor consolidado sem memoria de calculo interna',
+      scope: 'Valor consolidado sem memória de cálculo interna',
     },
     {
-      name: 'Instalacoes complementares v1.1',
+      name: 'Instalações complementares v1.1',
       reference: 'Revisado em 22/03/2026',
       value: 'R$ 1.280.000',
-      statusLabel: 'Em analise',
+      statusLabel: 'Em análise',
       statusTone: 'warning',
       scope: 'Somente status e faixa financeira liberados',
     },
     {
-      name: 'Fase de fundacoes baseline',
+      name: 'Fase de fundações baseline',
       reference: 'Congelado em 10/03/2026',
       value: 'R$ 2.150.000',
       statusLabel: 'Publicado',
       statusTone: 'info',
-      scope: 'Baseline aprovada pela operacao MilaTec',
+      scope: 'Baseline aprovada pela operação MilaTec',
     },
   ],
   projectStream: [
     {
       stage: 'Planejamento executivo',
       owner: 'MilaTec + cliente',
-      statusLabel: 'Concluido',
+      statusLabel: 'Concluído',
       statusTone: 'success',
       highlight: 'Escopo travado e publicado no feed do cliente.',
     },
     {
-      stage: 'Execucao estrutural',
-      owner: 'Operacao MilaTec',
+      stage: 'Execução estrutural',
+      owner: 'Operação MilaTec',
       statusLabel: 'Em curso',
       statusTone: 'info',
-      highlight: 'Avanco dentro da janela prevista para abril.',
+      highlight: 'Avanço dentro da janela prevista para abril.',
     },
     {
-      stage: 'Instalacoes finais',
-      owner: 'Operacao MilaTec',
-      statusLabel: 'Preparacao',
+      stage: 'Instalações finais',
+      owner: 'Operação MilaTec',
+      statusLabel: 'Preparação',
       statusTone: 'warning',
-      highlight: 'Dependente da liberacao total da estrutura metalica.',
+      highlight: 'Dependente da liberação total da estrutura metálica.',
     },
   ],
   deliveries: [
     {
-      title: 'Estrutura metalica - bloco A',
+      title: 'Estrutura metálica - bloco A',
       window: '12/04/2026',
       statusLabel: 'Confirmada',
       statusTone: 'success',
       channel: 'Portal do cliente',
-      dependency: 'Fundacoes encerradas e checklist aprovado',
+      dependency: 'Fundações encerradas e checklist aprovado',
     },
     {
-      title: 'Atualizacao do diario fotografico',
+      title: 'Atualização do diário fotográfico',
       window: '15/04/2026',
       statusLabel: 'Programada',
       statusTone: 'info',
@@ -153,12 +153,12 @@ const clientReadModel = {
       dependency: 'Upload consolidado pela equipe de campo',
     },
     {
-      title: 'Pacote de instalacoes finais',
+      title: 'Pacote de instalações finais',
       window: '23/04/2026',
       statusLabel: 'Aguardando',
       statusTone: 'warning',
       channel: 'Entregas',
-      dependency: 'Liberacao da etapa estrutural no Airtable',
+      dependency: 'Liberação da etapa estrutural no Airtable',
     },
   ],
   documents: [
@@ -179,7 +179,7 @@ const clientReadModel = {
       syncedAt: '31/03 18:02',
     },
     {
-      name: 'Relatorio fotografico',
+      name: 'Relatório fotográfico',
       category: 'Obra',
       availability: 'Em processamento',
       statusTone: 'warning',
@@ -188,7 +188,7 @@ const clientReadModel = {
     },
     {
       name: 'Checklist interno de aprovacao',
-      category: 'Governanca',
+      category: 'Governança',
       availability: 'Retido',
       statusTone: 'critical',
       visibility: 'Admin only',
@@ -196,18 +196,18 @@ const clientReadModel = {
     },
   ],
   accessRules: [
-    'O cliente nao ve identificadores internos do Airtable, tokens, comentarios de equipe ou anexos restritos.',
+    'O cliente não vê identificadores internos do Airtable, tokens, comentários de equipe ou anexos restritos.',
     'A API publica somente colunas homologadas para a jornada do cliente.',
-    'Todo conteudo exibido nesta area e bloqueado para escrita e depende da autenticacao por perfil.',
+    'Todo conteúdo exibido nesta área é bloqueado para escrita e depende da autenticação por perfil.',
   ],
 };
 
 const adminReadModel = {
   intro: {
-    eyebrow: 'Area administrativa',
-    title: 'Visao operacional da leitura MilaTec',
+    eyebrow: 'Área administrativa',
+    title: 'Visão operacional da leitura MilaTec',
     description:
-      'A administracao acompanha o funil Airtable -> API -> portal sem editar dados no frontend. O objetivo e monitorar publicacao, acesso e qualidade do payload exposto.',
+      'A administração acompanha o funil Airtable -> API -> portal sem editar dados no frontend. O objetivo é monitorar publicação, acesso e qualidade do payload exposto.',
   },
   summaryCards: [
     {
@@ -217,9 +217,9 @@ const adminReadModel = {
       accent: '#0B1F4D',
     },
     {
-      label: 'Saude do sync',
+      label: 'Saúde do sync',
       value: '99,2%',
-      detail: 'Ultimo ciclo sem divergencia critica',
+      detail: 'Último ciclo sem divergência crítica',
       accent: '#00A86B',
     },
     {
@@ -238,19 +238,19 @@ const adminReadModel = {
   alerts: [
     {
       title: 'Projeto Atlas com atraso de 1 dia no feed de entregas',
-      detail: 'A API aguarda liberacao do campo deliverable_status no Airtable para republicar a timeline.',
+      detail: 'A API aguarda liberação do campo deliverable_status no Airtable para republicar a timeline.',
       severity: 'attention',
     },
     {
       title: 'Dois documentos restritos barrados antes da camada cliente',
-      detail: 'Politica de mascaramento preservou anexos de contrato fora da area publica.',
+      detail: 'Política de mascaramento preservou anexos de contrato fora da área pública.',
       severity: 'safe',
     },
   ],
   clientSnapshots: [
     {
       client: 'Grupo Horizonte',
-      project: 'Metalica 440',
+      project: 'Metálica 440',
       lastSync: '17:40',
       contact: 'fm***@grupohorizonte.com',
       exposure: 'Financeiro consolidado + cronograma',
@@ -266,7 +266,7 @@ const adminReadModel = {
     },
     {
       client: 'Nova Linha',
-      project: 'Centro logistico',
+      project: 'Centro logístico',
       lastSync: '16:42',
       contact: 'ob***@novalinha.com',
       exposure: 'Projeto + documentos selecionados',
@@ -277,13 +277,13 @@ const adminReadModel = {
     {
       label: 'Leituras Airtable',
       value: '184 req/h',
-      detail: 'Consumo dentro do budget da integracao',
+      detail: 'Consumo dentro do budget da integração',
       tone: 'success',
     },
     {
       label: 'Payloads publicados',
       value: '62',
-      detail: 'Respostas entregues com sanitizacao aplicada',
+      detail: 'Respostas entregues com sanitização aplicada',
       tone: 'info',
     },
     {
@@ -295,7 +295,7 @@ const adminReadModel = {
     {
       label: 'Falhas bloqueadas',
       value: '00',
-      detail: 'Nenhuma exposicao sensivel detectada hoje',
+      detail: 'Nenhuma exposição sensível detectada hoje',
       tone: 'success',
     },
   ],
@@ -303,7 +303,7 @@ const adminReadModel = {
     {
       time: '17:32',
       title: 'View Airtable consolidada',
-      description: 'Campos internos permaneceram fora da view de publicacao.',
+      description: 'Campos internos permaneceram fora da view de publicação.',
     },
     {
       time: '17:35',
@@ -322,14 +322,14 @@ const adminReadModel = {
       visibility: 'Admin only',
       statusLabel: 'Restrito',
       statusTone: 'critical',
-      policy: 'Nao exposto ao cliente por conter clausulas internas',
+      policy: 'Não exposto ao cliente por conter cláusulas internas',
     },
     {
       name: 'Cronograma executivo',
       visibility: 'Cliente + admin',
       statusLabel: 'Publicado',
       statusTone: 'success',
-      policy: 'Versao sanitizada liberada pela API',
+      policy: 'Versão sanitizada liberada pela API',
     },
     {
       name: 'Relatorio de obra',
@@ -342,27 +342,27 @@ const adminReadModel = {
   accessMatrix: [
     {
       profile: 'Cliente',
-      routes: 'Painel, Orcamentos, Projeto, Entregas, Documentos',
+      routes: 'Painel, Orçamentos, Projeto, Entregas, Documentos',
       data: 'Projeto vinculado e documentos homologados',
       restrictions: 'Sem escrita, sem IDs internos e sem anexos restritos',
     },
     {
       profile: 'Admin Ops',
-      routes: 'Dashboard admin, clientes, operacao, documentos, acessos',
-      data: 'Visao consolidada por cliente e por fila',
+      routes: 'Dashboard admin, clientes, operação, documentos, acessos',
+      data: 'Visão consolidada por cliente e por fila',
       restrictions: 'Leitura sem alterar Airtable ou API pelo frontend',
     },
     {
       profile: 'Diretoria',
       routes: 'Mesma base admin com foco executivo',
-      data: 'Indicadores macro e publicacao',
-      restrictions: 'Sem comentarios tecnicos detalhados quando nao homologados',
+      data: 'Indicadores macro e publicação',
+      restrictions: 'Sem comentários técnicos detalhados quando não homologados',
     },
   ],
   securityRules: [
-    'Airtable permanece como fonte unica da verdade; nada e persistido no frontend.',
-    'A API remove comentarios internos, IDs de base, tokens e anexos sensiveis antes da resposta.',
-    'Cada rota exige perfil compativel e a navegacao cliente/admin permanece separada.',
+    'Airtable permanece como fonte única da verdade; nada é persistido no frontend.',
+    'A API remove comentários internos, IDs de base, tokens e anexos sensíveis antes da resposta.',
+    'Cada rota exige perfil compatível e a navegação cliente/admin permanece separada.',
     'Nenhuma tela publica formularios de escrita operacional ou administrativa.',
   ],
   overviewMessage:
@@ -380,3 +380,5 @@ export function getPlatformMeta() {
 export function getPortalReadModel(role = 'client') {
   return clone(role === 'admin' ? adminReadModel : clientReadModel);
 }
+
+

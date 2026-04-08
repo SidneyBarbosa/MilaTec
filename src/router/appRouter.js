@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory } from 'vue-router';
+﻿import { createRouter, createWebHistory } from 'vue-router';
 import { canAccessRoles, resolveDefaultRoute, sessionRole } from '@/composables/useSession';
 import LoginView from '@/views/auth/LoginReadonlyView.vue';
 import VerifyAccessView from '@/views/auth/VerifyAccessView.vue';
@@ -29,7 +29,7 @@ const routes = [
     path: '/verificar-codigo',
     name: 'verify-code',
     component: VerifyAccessView,
-    meta: { layout: 'auth', guestOnly: true, title: 'Verificacao de acesso' },
+    meta: { layout: 'auth', guestOnly: true, title: 'Verificação de acesso' },
   },
   {
     path: '/cliente',
@@ -142,3 +142,4 @@ router.afterEach((to) => {
 });
 
 export default router;
+

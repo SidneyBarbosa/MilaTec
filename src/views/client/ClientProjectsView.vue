@@ -13,8 +13,8 @@
     <BaseCard>
       <template #header>
         <div>
-          <p class="pill">Regras de visualizacao</p>
-          <h3>Protecoes desta area</h3>
+          <p class="pill">Regras de visualização</p>
+          <h3>Proteções desta área</h3>
         </div>
       </template>
 
@@ -80,4 +80,5 @@ small {
   background: var(--accent);
 }
 </style>
+
 

@@ -1,15 +1,15 @@
-const clientWorks = [
+﻿const clientWorks = [
   {
     id: 'obra-metalica-440',
-    name: 'Metalica 440',
+    name: 'Metálica 440',
     city: 'Fortaleza, CE',
-    stage: 'Estrutura metalica',
+    stage: 'Estrutura metálica',
   },
   {
     id: 'obra-centro-apoio-logistico',
-    name: 'Centro de apoio logistico',
-    city: 'Maracanau, CE',
-    stage: 'Fundacoes',
+    name: 'Centro de apoio logístico',
+    city: 'Maracanaú, CE',
+    stage: 'Fundações',
   },
 ];
 
@@ -19,9 +19,9 @@ const clientProjectsBase = [
     workId: 'obra-metalica-440',
     name: 'Estrutura principal',
     location: 'Fortaleza, CE',
-    type: 'Galpao industrial',
-    stage: 'Em fabricacao',
-    quantity: '120 pecas',
+    type: 'Galpão industrial',
+    stage: 'Em fabricação',
+    quantity: '120 peças',
     unitValue: 'R$ 12.400,00',
     totalValue: 'R$ 1.488.000,00',
   },
@@ -30,19 +30,19 @@ const clientProjectsBase = [
     workId: 'obra-metalica-440',
     name: 'Cobertura modular',
     location: 'Fortaleza, CE',
-    type: 'Cobertura metalica',
+    type: 'Cobertura metálica',
     stage: 'Planejamento executivo',
-    quantity: '48 modulos',
+    quantity: '48 módulos',
     unitValue: 'R$ 8.350,00',
     totalValue: 'R$ 400.800,00',
   },
   {
     id: 'proj-passarela-tecnica',
     workId: 'obra-centro-apoio-logistico',
-    name: 'Passarela tecnica',
-    location: 'Maracanau, CE',
+    name: 'Passarela técnica',
+    location: 'Maracanaú, CE',
     type: 'Estrutura complementar',
-    stage: 'Orcamento homologado',
+    stage: 'Orçamento homologado',
     quantity: '14 conjuntos',
     unitValue: 'R$ 18.700,00',
     totalValue: 'R$ 261.800,00',
@@ -54,7 +54,7 @@ const clientDeliveriesBase = [
     projectId: 'proj-estrutura-principal',
     name: 'Lote A de pilares',
     date: '12/04/2026',
-    quantity: '32 pecas',
+    quantity: '32 peças',
     status: 'Programada',
     tone: 'info',
   },
@@ -62,16 +62,16 @@ const clientDeliveriesBase = [
     projectId: 'proj-cobertura-modular',
     name: 'Lote B de vigas',
     date: '18/04/2026',
-    quantity: '24 pecas',
+    quantity: '24 peças',
     status: 'Confirmada',
     tone: 'success',
   },
   {
     projectId: 'proj-passarela-tecnica',
-    name: 'Kit de fixacao secundaria',
+    name: 'Kit de fixação secundária',
     date: '23/04/2026',
     quantity: '14 caixas',
-    status: 'Em separacao',
+    status: 'Em separação',
     tone: 'warning',
   },
 ];
@@ -81,16 +81,16 @@ const clientProjectsById = Object.fromEntries(clientProjectsBase.map((project) =
 
 const clientPortalData = {
   company: {
-    name: 'Grupo Horizonte Participacoes',
+    name: 'Grupo Horizonte Participações',
     cityState: 'Fortaleza, CE',
-    primaryContact: 'Joao Miguel',
+    primaryContact: 'João Miguel',
     primaryEmail: 'joao@grupohorizonte.com',
     primaryPhone: '(85) 99999-4400',
   },
   works: clientWorks,
   projects: clientProjectsBase.map((project) => ({
     ...project,
-    workName: clientWorksById[project.workId]?.name || 'Obra nao vinculada',
+    workName: clientWorksById[project.workId]?.name || 'Obra não vinculada',
   })),
   deliveries: clientDeliveriesBase.map((delivery) => {
     const linkedProject = clientProjectsById[delivery.projectId];
@@ -98,8 +98,8 @@ const clientPortalData = {
 
     return {
       ...delivery,
-      projectName: linkedProject?.name || 'Projeto nao vinculado',
-      workName: linkedWork?.name || 'Obra nao vinculada',
+      projectName: linkedProject?.name || 'Projeto não vinculado',
+      workName: linkedWork?.name || 'Obra não vinculada',
     };
   }),
   attachments: [
@@ -112,7 +112,7 @@ const clientPortalData = {
     },
     {
       name: 'mapa-de-entregas-v2.xlsx',
-      category: 'Logistica',
+      category: 'Logística',
       uploadedAt: '31/03/2026',
       href: '#',
       actionLabel: 'Baixar',
@@ -139,22 +139,22 @@ const clientPortalData = {
       accent: '#004AE8',
     },
     {
-      label: 'Projetos visiveis',
+      label: 'Projetos visíveis',
       value: '3',
-      detail: 'Projetos alinhados a operacao da empresa',
+      detail: 'Projetos alinhados à operação da empresa',
       accent: '#00A34A',
     },
     {
       label: 'Anexos liberados',
       value: '3',
-      detail: 'Arquivos disponiveis para consulta',
+      detail: 'Arquivos disponíveis para consulta',
       accent: '#004AE8',
     },
   ],
   readOnlyRules: [
-    'Esta area reune apenas os dados vinculados a empresa autenticada e ao contato principal.',
+    'Esta área reúne apenas os dados vinculados à empresa autenticada e ao contato principal.',
     'Os registros exibidos aqui servem para acompanhamento das obras, projetos, entregas e anexos.',
-    'Os anexos respeitam as liberacoes disponiveis para esta conta.',
+    'Os anexos respeitam as liberações disponíveis para esta conta.',
   ],
 };
 
@@ -169,7 +169,7 @@ const adminPortalData = {
     {
       label: 'Obras monitoradas',
       value: '27',
-      detail: 'Visao consolidada das obras ativas',
+      detail: 'Visão consolidada das obras ativas',
       accent: '#004AE8',
     },
     {
@@ -187,9 +187,9 @@ const adminPortalData = {
   ],
   customers: [
     {
-      company: 'Grupo Horizonte Participacoes',
+      company: 'Grupo Horizonte Participações',
       cityState: 'Fortaleza, CE',
-      primaryContact: 'Joao Miguel',
+      primaryContact: 'João Miguel',
       email: 'jo***@grupohorizonte.com',
       scope: 'Empresa, obras, projetos, entregas e anexos',
     },
@@ -201,7 +201,7 @@ const adminPortalData = {
       scope: 'Obras, entregas e anexos publicados',
     },
     {
-      company: 'Nova Linha Logistica',
+      company: 'Nova Linha Logística',
       cityState: 'Caucaia, CE',
       primaryContact: 'Bruno Lima',
       email: 'br***@novalinha.com',
@@ -210,10 +210,10 @@ const adminPortalData = {
   ],
   works: [
     {
-      client: 'Grupo Horizonte Participacoes',
-      name: 'Metalica 440',
+      client: 'Grupo Horizonte Participações',
+      name: 'Metálica 440',
       city: 'Fortaleza, CE',
-      stage: 'Estrutura metalica',
+      stage: 'Estrutura metálica',
     },
     {
       client: 'Atlas Real Estate',
@@ -222,7 +222,7 @@ const adminPortalData = {
       stage: 'Fechamento de cobertura',
     },
     {
-      client: 'Nova Linha Logistica',
+      client: 'Nova Linha Logística',
       name: 'Hub Oeste',
       city: 'Caucaia, CE',
       stage: 'Planejamento executivo',
@@ -230,12 +230,12 @@ const adminPortalData = {
   ],
   projects: [
     {
-      client: 'Grupo Horizonte Participacoes',
+      client: 'Grupo Horizonte Participações',
       name: 'Estrutura principal',
       location: 'Fortaleza, CE',
-      type: 'Galpao industrial',
-      stage: 'Em fabricacao',
-      quantity: '120 pecas',
+      type: 'Galpão industrial',
+      stage: 'Em fabricação',
+      quantity: '120 peças',
       unitValue: 'R$ 12.400,00',
       totalValue: 'R$ 1.488.000,00',
     },
@@ -243,18 +243,18 @@ const adminPortalData = {
       client: 'Atlas Real Estate',
       name: 'Cobertura norte',
       location: 'Recife, PE',
-      type: 'Cobertura metalica',
+      type: 'Cobertura metálica',
       stage: 'Montagem',
-      quantity: '64 modulos',
+      quantity: '64 módulos',
       unitValue: 'R$ 9.800,00',
       totalValue: 'R$ 627.200,00',
     },
     {
-      client: 'Nova Linha Logistica',
-      name: 'Passarela tecnica',
+      client: 'Nova Linha Logística',
+      name: 'Passarela técnica',
       location: 'Caucaia, CE',
       type: 'Estrutura complementar',
-      stage: 'Aprovacao final',
+      stage: 'Aprovação final',
       quantity: '14 conjuntos',
       unitValue: 'R$ 18.700,00',
       totalValue: 'R$ 261.800,00',
@@ -262,10 +262,10 @@ const adminPortalData = {
   ],
   deliveries: [
     {
-      client: 'Grupo Horizonte Participacoes',
+      client: 'Grupo Horizonte Participações',
       name: 'Lote A de pilares',
       date: '12/04/2026',
-      quantity: '32 pecas',
+      quantity: '32 peças',
       status: 'Programada',
       tone: 'info',
     },
@@ -273,44 +273,44 @@ const adminPortalData = {
       client: 'Atlas Real Estate',
       name: 'Trelica secundaria',
       date: '16/04/2026',
-      quantity: '18 pecas',
+      quantity: '18 peças',
       status: 'Confirmada',
       tone: 'success',
     },
     {
-      client: 'Nova Linha Logistica',
+      client: 'Nova Linha Logística',
       name: 'Kit de chumbadores',
       date: '19/04/2026',
       quantity: '12 caixas',
-      status: 'Em separacao',
+      status: 'Em separação',
       tone: 'warning',
     },
   ],
   attachments: [
     {
-      client: 'Grupo Horizonte Participacoes',
+      client: 'Grupo Horizonte Participações',
       name: 'cronograma-executivo-abril.pdf',
       category: 'Cronograma',
       uploadedAt: '01/04/2026',
-      visibility: 'Cliente e administracao',
+      visibility: 'Cliente e administração',
       actionLabel: 'Abrir',
       href: '#',
     },
     {
       client: 'Atlas Real Estate',
       name: 'mapa-logistico-semana-14.xlsx',
-      category: 'Logistica',
+      category: 'Logística',
       uploadedAt: '31/03/2026',
-      visibility: 'Cliente e administracao',
+      visibility: 'Cliente e administração',
       actionLabel: 'Baixar',
       href: '#',
     },
     {
-      client: 'Nova Linha Logistica',
+      client: 'Nova Linha Logística',
       name: 'relatorio-interno-de-custos.pdf',
       category: 'Financeiro',
       uploadedAt: '30/03/2026',
-      visibility: 'Administracao',
+      visibility: 'Administração',
       actionLabel: 'Restringido',
       href: '#',
     },
@@ -323,7 +323,7 @@ const adminPortalData = {
       accent: '#050866',
     },
     {
-      label: 'Revisoes pendentes',
+      label: 'Revisões pendentes',
       value: '3',
       detail: 'Escopos aguardando nova checagem',
       accent: '#B7791F',
@@ -338,7 +338,7 @@ const adminPortalData = {
   accessProfiles: [
     {
       profile: 'Cliente',
-      owner: 'Grupo Horizonte Participacoes',
+      owner: 'Grupo Horizonte Participações',
       scope: 'Empresa, obras, projetos, entregas e anexos',
       status: 'Ativo',
       tone: 'success',
@@ -354,7 +354,7 @@ const adminPortalData = {
     },
     {
       profile: 'Admin Ops',
-      owner: 'Operacoes MilaTec',
+      owner: 'Operações MilaTec',
       scope: 'Clientes, obras, projetos, entregas, anexos e acessos',
       status: 'Auditado',
       tone: 'info',
@@ -362,7 +362,7 @@ const adminPortalData = {
     },
     {
       profile: 'Diretoria',
-      owner: 'Lideranca MilaTec',
+      owner: 'Liderança MilaTec',
       scope: 'Leitura executiva e materiais restritos autorizados',
       status: 'Restrito',
       tone: 'critical',
@@ -372,19 +372,19 @@ const adminPortalData = {
   accessActions: [
     {
       title: 'Revisar escopo da conta Atlas Real Estate',
-      detail: 'Liberacao parcial precisa ser confirmada antes da proxima publicacao.',
+      detail: 'Liberação parcial precisa ser confirmada antes da próxima publicação.',
     },
     {
-      title: 'Validar troca de responsavel da conta Grupo Horizonte',
-      detail: 'Contato principal atualizado e aguardando confirmacao operacional.',
+      title: 'Validar troca de responsável da conta Grupo Horizonte',
+      detail: 'Contato principal atualizado e aguardando confirmação operacional.',
     },
     {
-      title: 'Encerrar acesso temporario de homologacao',
-      detail: 'Perfil tecnico expira em 09/04/2026 e deve ser removido da lista ativa.',
+      title: 'Encerrar acesso temporário de homologação',
+      detail: 'Perfil técnico expira em 09/04/2026 e deve ser removido da lista ativa.',
     },
   ],
   securityRules: [
-    'Toda liberacao depende de perfil, empresa e escopo homologado pela operacao.',
+    'Toda liberação depende de perfil, empresa e escopo homologado pela operação.',
     'Perfis administrativos permanecem separados por responsabilidade operacional.',
     'Tentativas fora do escopo e anexos restritos seguem bloqueados antes da camada cliente.',
   ],
@@ -401,3 +401,5 @@ export function getClientPortalData() {
 export function getAdminPortalData() {
   return clone(adminPortalData);
 }
+
+

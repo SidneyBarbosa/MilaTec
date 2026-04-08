@@ -12,7 +12,7 @@
       <BaseCard class="table-card">
         <template #header>
           <div>
-            <p class="pill">Revisao de escopos</p>
+            <p class="pill">Revisão de escopos</p>
             <h3>Perfis monitorados</h3>
           </div>
         </template>
@@ -23,7 +23,7 @@
             <span>Conta</span>
             <span>Escopo liberado</span>
             <span>Status</span>
-            <span>Ultima revisao</span>
+            <span>Última revisão</span>
           </div>
 
           <div class="table__body">
@@ -61,7 +61,7 @@
       <template #header>
         <div>
           <p class="pill">Controles aplicados</p>
-          <h3>Politicas de acesso</h3>
+          <h3>Políticas de acesso</h3>
         </div>
       </template>
 
@@ -185,3 +185,4 @@ const { accessSummary, accessProfiles, accessActions, securityRules } = getAdmin
   }
 }
 </style>
+

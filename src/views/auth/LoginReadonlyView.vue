@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <section class="login-card">
     <div class="login__brand">
       <div class="brand-lockup">
@@ -12,13 +12,13 @@
 
     <header class="login__header">
       <p class="eyebrow">Portal MilaTec</p>
-      <h1>Entre na area correta da MilaTec</h1>
+      <h1>Entre na área correta da MilaTec</h1>
       <p class="subtitle">
-        Escolha o perfil, informe o e-mail autorizado e siga para a validacao de acesso da area correta.
+        Escolha o perfil, informe o e-mail autorizado e siga para a validação de acesso da área correta.
       </p>
     </header>
 
-    <div class="login__roles" aria-label="Selecao de perfil">
+    <div class="login__roles" aria-label="Seleção de perfil">
       <button
         v-for="profile in profileOptions"
         :key="profile.role"
@@ -47,11 +47,11 @@
       </div>
 
       <BaseButton class="login__submit" size="lg" block>
-        Receber codigo de acesso
+        Receber código de acesso
       </BaseButton>
 
       <p class="helper">
-        Cliente e administracao possuem areas separadas conforme o perfil autenticado.
+        Cliente e administração possuem áreas separadas conforme o perfil autenticado.
       </p>
     </form>
   </section>
@@ -258,3 +258,4 @@ const onSubmit = () => {
   }
 }
 </style>
+

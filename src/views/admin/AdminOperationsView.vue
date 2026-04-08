@@ -14,7 +14,7 @@
         <template #header>
           <div>
             <p class="pill">Timeline de sync</p>
-            <h3>Ultima cadeia de publicacao</h3>
+            <h3>Última cadeia de publicação</h3>
           </div>
         </template>
 
@@ -119,4 +119,5 @@ const { operationalQueues, syncTimeline } = getPortalReadModel('admin');
   }
 }
 </style>
+
 

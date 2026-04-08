@@ -1,4 +1,4 @@
-import { computed, ref } from 'vue';
+﻿import { computed, ref } from 'vue';
 
 const STORAGE_KEY_ROLE = 'milatec:session-role';
 const STORAGE_KEY_EMAIL = 'milatec:session-email';
@@ -7,8 +7,8 @@ const profileDirectory = Object.freeze({
   client: Object.freeze({
     role: 'client',
     label: 'Cliente',
-    areaLabel: 'Area do Cliente',
-    name: 'Joao Miguel',
+    areaLabel: 'Área do Cliente',
+    name: 'João Miguel',
     company: 'Grupo Horizonte',
     defaultEmail: 'joao@grupohorizonte.com',
     initials: 'JM',
@@ -17,12 +17,12 @@ const profileDirectory = Object.freeze({
   admin: Object.freeze({
     role: 'admin',
     label: 'Administrador',
-    areaLabel: 'Area Administrativa',
+    areaLabel: 'Área Administrativa',
     name: 'Ana Paula',
     company: 'MilaTec',
     defaultEmail: 'operacoes@milatec.com.br',
     initials: 'AP',
-    scopeLabel: 'Leitura operacional multiempresa com exposicao minima por perfil',
+    scopeLabel: 'Leitura operacional multiempresa com exposição mínima por perfil',
   }),
 });
 
@@ -111,3 +111,4 @@ export function useSession() {
 }
 
 export { sessionRole };
+

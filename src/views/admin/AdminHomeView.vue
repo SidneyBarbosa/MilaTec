@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="page">
     <BaseCard class="meta-card" variant="flat">
       <span class="pill">{{ platform.mode }}</span>
@@ -18,7 +18,7 @@
       <BaseCard>
         <template #header>
           <div>
-            <p class="pill">Alertas de governanca</p>
+            <p class="pill">Alertas de governança</p>
             <h3>Riscos e bloqueios monitorados</h3>
           </div>
         </template>
@@ -151,3 +151,4 @@ const { summaryCards, alerts, operationalQueues, securityRules, overviewMessage 
   }
 }
 </style>
+

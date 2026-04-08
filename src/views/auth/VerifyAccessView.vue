@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <section class="verify">
     <div class="verify__brand">
       <div class="brand-lockup">
@@ -7,15 +7,15 @@
           <strong>MilaTec</strong>
         </div>
       </div>
-      <p class="pill">Validacao de perfil</p>
+      <p class="pill">Validação de perfil</p>
     </div>
 
     <div class="verify__content">
       <header>
         <p class="eyebrow">Confirmacao de acesso</p>
-        <h1>Confirme o codigo e entre na area correta</h1>
+        <h1>Confirme o código e entre na área correta</h1>
         <p class="subtitle">
-          Confirme o codigo para acessar sua area e continuar com o perfil selecionado.
+          Confirme o código para acessar sua área e continuar com o perfil selecionado.
         </p>
       </header>
 
@@ -28,7 +28,7 @@
       <form class="verify__form" @submit.prevent="onSubmit">
         <BaseInput
           v-model="code"
-          label="Codigo de validacao"
+          label="Código de validação"
           placeholder="000000"
           maxlength="6"
           inputmode="numeric"
@@ -43,7 +43,7 @@
 
         <div class="actions">
           <BaseButton variant="ghost" size="sm" @click.prevent="onResend">
-            Reenviar codigo
+            Reenviar código
           </BaseButton>
           <RouterLink to="/login" class="back-link">Voltar</RouterLink>
         </div>
@@ -230,3 +230,4 @@ h1 {
   }
 }
 </style>
+

@@ -1,15 +1,15 @@
-<template>
+﻿<template>
   <div class="shell">
     <aside class="sidebar">
       <div class="sidebar__brand-card">
         <img :src="logo" alt="MilaTec" class="sidebar__brand-logo" />
         <div class="sidebar__brand-copy">
           <strong>MilaTec</strong>
-          <span>Area do Cliente</span>
+          <span>Área do Cliente</span>
         </div>
       </div>
 
-      <nav class="sidebar__menu" aria-label="Navegacao principal">
+      <nav class="sidebar__menu" aria-label="Navegação principal">
         <RouterLink
           v-for="item in menu"
           :key="item.to"
@@ -47,7 +47,7 @@
         <div class="topbar__profile">
           <div class="topbar__profile-copy">
             <span class="topbar__profile-label">Cliente</span>
-            <strong>joao miguel</strong>
+            <strong>João Miguel</strong>
           </div>
           <div class="topbar__avatar">JM</div>
         </div>
@@ -69,7 +69,7 @@ const route = useRoute();
 
 const menu = [
   { label: 'Dashboard', to: '/', icon: 'dashboard' },
-  { label: 'Orcamentos', to: '/orcamentos', icon: 'request_quote' },
+  { label: 'Orçamentos', to: '/orcamentos', icon: 'request_quote' },
   { label: 'Projetos', to: '/projetos', icon: 'folder' },
   { label: 'Entregas', to: '/entregas', icon: 'local_shipping' },
   { label: 'Documentos', to: '/documentos', icon: 'attach_file' },
@@ -326,3 +326,5 @@ const currentTitle = computed(() => route.meta?.title || 'Dashboard');
   }
 }
 </style>
+
+

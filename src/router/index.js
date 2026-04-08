@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory } from 'vue-router';
+﻿import { createRouter, createWebHistory } from 'vue-router';
 import { canAccessRoles, resolveDefaultRoute, sessionRole } from '@/composables/useSession';
 import HomeView from '@/views/client/ClientHomeView.vue';
 import BudgetsView from '@/views/client/ClientBudgetsView.vue';
@@ -22,7 +22,7 @@ import AdminAccessView from '@/views/admin/AdminAccessView.vue';
     path: '/orcamentos',
     name: 'client-budgets',
     component: BudgetsView,
-    meta: { title: 'Orçamentos' },
+    meta: { title: 'OrÃ§amentos' },
   },
   {
     path: '/projetos',
@@ -52,7 +52,7 @@ import AdminAccessView from '@/views/admin/AdminAccessView.vue';
     path: '/verificar-codigo',
     name: 'verify-code',
     component: VerifyCodeView,
-    meta: { layout: 'auth', guestOnly: true, title: 'Verificacao de acesso' },
+    meta: { layout: 'auth', guestOnly: true, title: 'Verificação de acesso' },
   },
   {
     path: '/suporte',
@@ -76,7 +76,7 @@ const routes = [
     path: '/verificar-codigo',
     name: 'verify-code',
     component: VerifyCodeView,
-    meta: { layout: 'auth', guestOnly: true, title: 'Verificacao de acesso' },
+    meta: { layout: 'auth', guestOnly: true, title: 'Verificação de acesso' },
   },
   {
     path: '/cliente',
@@ -88,13 +88,13 @@ const routes = [
     path: '/cliente/orcamentos',
     name: 'client-budgets',
     component: BudgetsView,
-    meta: { requiresAuth: true, roles: ['client'], title: 'Orcamentos homologados' },
+    meta: { requiresAuth: true, roles: ['client'], title: 'Orçamentos homologados' },
   },
   {
     path: '/cliente/projetos',
     name: 'client-projects',
     component: ProjectsView,
-    meta: { requiresAuth: true, roles: ['client'], title: 'Projeto e governanca' },
+    meta: { requiresAuth: true, roles: ['client'], title: 'Projeto e governança' },
   },
   {
     path: '/cliente/entregas',
@@ -112,7 +112,7 @@ const routes = [
     path: '/admin',
     name: 'admin-home',
     component: AdminHomeView,
-    meta: { requiresAuth: true, roles: ['admin'], title: 'Visao executiva' },
+    meta: { requiresAuth: true, roles: ['admin'], title: 'Visão executiva' },
   },
   {
     path: '/admin/clientes',
@@ -124,13 +124,13 @@ const routes = [
     path: '/admin/operacao',
     name: 'admin-operations',
     component: AdminOperationsView,
-    meta: { requiresAuth: true, roles: ['admin'], title: 'Operacao e sincronismo' },
+    meta: { requiresAuth: true, roles: ['admin'], title: 'Operação e sincronismo' },
   },
   {
     path: '/admin/documentos',
     name: 'admin-documents',
     component: AdminDocumentsView,
-    meta: { requiresAuth: true, roles: ['admin'], title: 'Governanca documental' },
+    meta: { requiresAuth: true, roles: ['admin'], title: 'Governança documental' },
   },
   {
     path: '/admin/acessos',
@@ -175,3 +175,5 @@ router.afterEach((to) => {
 });
 
 export default router;
+
+

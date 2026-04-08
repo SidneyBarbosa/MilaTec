@@ -45,8 +45,8 @@
       <BaseCard>
         <template #header>
           <div>
-            <p class="pill">Visao da conta</p>
-            <h3>Informacoes disponiveis</h3>
+            <p class="pill">Visão da conta</p>
+            <h3>Informações disponíveis</h3>
           </div>
         </template>
 
@@ -147,4 +147,5 @@ const { company, summaryCards, readOnlyRules } = getClientPortalData();
   }
 }
 </style>
+
 
