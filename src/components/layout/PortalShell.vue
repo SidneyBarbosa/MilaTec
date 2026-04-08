@@ -105,7 +105,7 @@ const onSignOut = () => {
 .shell {
   min-height: 100vh;
   display: grid;
-  grid-template-columns: 280px minmax(0, 1fr);
+  grid-template-columns: 268px minmax(0, 1fr);
   background:
     radial-gradient(120% 120% at 100% 0%, rgba(0, 163, 74, 0.1), transparent 40%),
     linear-gradient(180deg, #f6f7f8 0%, #eef2ff 100%);
@@ -114,8 +114,8 @@ const onSignOut = () => {
 .sidebar {
   display: grid;
   grid-template-rows: auto 1fr auto;
-  gap: 18px;
-  padding: 18px 14px;
+  gap: 16px;
+  padding: 16px 12px;
   background: linear-gradient(180deg, #050866 0%, #08118b 100%);
   color: #ffffff;
   border-right: 1px solid rgba(255, 255, 255, 0.06);
@@ -127,19 +127,19 @@ const onSignOut = () => {
 
 .sidebar__brand-card {
   display: grid;
-  grid-template-columns: 40px 1fr;
+  grid-template-columns: 44px 1fr;
   align-items: center;
   gap: 12px;
-  padding: 14px;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.06);
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.18);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.16);
 }
 
 .sidebar__brand-logo {
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   object-fit: cover;
   border-radius: 12px;
 }
@@ -196,18 +196,18 @@ const onSignOut = () => {
 .sidebar__menu {
   display: grid;
   align-content: start;
-  gap: 8px;
+  gap: 6px;
 }
 
 .sidebar__item {
   position: relative;
   display: grid;
-  grid-template-columns: 4px 38px 1fr;
+  grid-template-columns: 4px 36px 1fr;
   align-items: center;
-  gap: 12px;
-  min-height: 54px;
-  padding: 0 12px;
-  border-radius: 16px;
+  gap: 10px;
+  min-height: 48px;
+  padding: 0 11px;
+  border-radius: 14px;
   color: rgba(255, 255, 255, 0.84);
   transition:
     background 0.2s ease,
@@ -217,14 +217,15 @@ const onSignOut = () => {
 }
 
 .sidebar__item:hover {
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.05);
   color: #ffffff;
+  transform: translateY(-1px);
 }
 
 .sidebar__item--active {
-  background: linear-gradient(135deg, rgba(0, 163, 74, 0.2), rgba(0, 74, 232, 0.18));
+  background: linear-gradient(135deg, rgba(0, 163, 74, 0.18), rgba(0, 74, 232, 0.2));
   color: #ffffff;
-  box-shadow: inset 0 0 0 1px rgba(0, 163, 74, 0.18), 0 14px 28px rgba(0, 74, 232, 0.18);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08), 0 12px 26px rgba(0, 74, 232, 0.16);
 }
 
 .sidebar__item-glow {
@@ -240,16 +241,16 @@ const onSignOut = () => {
 }
 
 .sidebar__item-icon {
-  width: 38px;
-  height: 38px;
+  width: 36px;
+  height: 36px;
   border-radius: 12px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.07);
   border: 1px solid rgba(255, 255, 255, 0.08);
   color: rgba(223, 234, 255, 0.94);
-  font-size: 22px;
+  font-size: 21px;
   line-height: 1;
   font-family: 'Material Icons';
   font-weight: 400;
@@ -263,11 +264,13 @@ const onSignOut = () => {
 .sidebar__item-label {
   font-size: 14px;
   font-weight: 600;
+  line-height: 1.15;
 }
 
 .sidebar__item--active .sidebar__item-icon {
   color: #ffffff;
   background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.12);
 }
 
 .sidebar__footer {
@@ -276,9 +279,9 @@ const onSignOut = () => {
 }
 
 .sidebar__logout {
-  min-height: 46px;
+  min-height: 42px;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 14px;
+  border-radius: 12px;
   background: rgba(255, 255, 255, 0.06);
   color: #ffffff;
   font-weight: 600;
@@ -302,7 +305,7 @@ const onSignOut = () => {
   align-items: flex-start;
   justify-content: space-between;
   gap: 18px;
-  padding: 20px 28px;
+  padding: 18px 24px;
   background: rgba(255, 255, 255, 0.9);
   border-bottom: 1px solid rgba(5, 8, 102, 0.08);
   backdrop-filter: blur(14px);
@@ -324,7 +327,7 @@ const onSignOut = () => {
 
 .topbar__title {
   margin: 0;
-  font-size: clamp(28px, 3.2vw, 36px);
+  font-size: clamp(26px, 3vw, 34px);
   line-height: 1.08;
   color: #050866;
 }
@@ -377,12 +380,18 @@ const onSignOut = () => {
 }
 
 .shell__content {
-  padding: 24px 26px 32px;
+  display: flex;
+  justify-content: center;
+  padding: 22px 20px 32px;
+}
+
+.shell__content > * {
+  width: 100%;
 }
 
 @media (max-width: 1080px) {
   .shell {
-    grid-template-columns: 248px minmax(0, 1fr);
+    grid-template-columns: 238px minmax(0, 1fr);
   }
 }
 
@@ -391,8 +400,35 @@ const onSignOut = () => {
     grid-template-columns: 1fr;
   }
 
+  .sidebar {
+    grid-template-rows: auto auto auto;
+    padding: 14px 14px 12px;
+    border-right: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .sidebar__menu {
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(132px, 1fr);
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+
+  .sidebar__session-card {
+    display: none;
+  }
+
+  .sidebar__footer {
+    justify-items: end;
+  }
+
   .topbar {
     flex-direction: column;
+    padding: 18px 18px 16px;
+  }
+
+  .shell__content {
+    padding: 18px 14px 28px;
   }
 }
 </style>

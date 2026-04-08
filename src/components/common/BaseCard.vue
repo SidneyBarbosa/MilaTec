@@ -25,17 +25,17 @@ defineProps({
 .card {
   background: var(--card);
   border-radius: var(--radius-lg);
-  border: 1px solid var(--stroke);
+  border: 1px solid var(--stroke-soft);
   box-shadow: var(--shadow-md);
-  padding: var(--space-5);
+  padding: 22px;
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: 14px;
 }
 
 .card.flat {
   box-shadow: none;
-  background: rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.74);
 }
 
 .card.outline {

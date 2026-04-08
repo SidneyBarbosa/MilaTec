@@ -1,5 +1,5 @@
 ﻿<template>
-  <div class="page">
+  <div class="page page--wide">
 
     <BaseCard class="table-card">
       <div class="table">
@@ -47,13 +47,24 @@ const { projects } = getClientPortalData();
 
 .table {
   display: grid;
+  overflow-x: auto;
+  scrollbar-width: thin;
 }
 
 
 .table__head,
 .table__row {
   display: grid;
-  grid-template-columns: 1.05fr 0.95fr 0.85fr 0.85fr 0.85fr 0.75fr 0.75fr 0.8fr;
+  min-width: 1080px;
+  grid-template-columns:
+    minmax(160px, 1.1fr)
+    minmax(150px, 1fr)
+    minmax(130px, 0.88fr)
+    minmax(140px, 0.92fr)
+    minmax(180px, 1.14fr)
+    minmax(120px, 0.86fr)
+    minmax(130px, 0.9fr)
+    minmax(130px, 0.95fr);
   gap: 14px;
   align-items: center;
 }
@@ -85,6 +96,10 @@ const { projects } = getClientPortalData();
 .table__cell--linked {
   color: var(--primary);
   font-weight: 600;
+}
+
+.table__cell .status-badge {
+  max-width: 100%;
 }
 
 @media (max-width: 1120px) {

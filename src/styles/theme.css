@@ -17,11 +17,15 @@
   --primary-strong: #050866;
   --accent: #00a34a;
   --accent-soft: #44c878;
+  --warning: #b7791f;
+  --danger: #c2415d;
   --text: #15204a;
   --text-strong: #050866;
-  --muted: #64708c;
-  --stroke: #dde4f0;
+  --muted: #6f7b96;
+  --stroke: #dfe7f2;
+  --stroke-soft: #ebf0f7;
   --overlay: rgba(5, 8, 102, 0.76);
+  --page-max-width: 1200px;
 
   /* Spacing scale */
   --space-2: 8px;
@@ -37,9 +41,9 @@
   --radius-lg: 18px;
 
   /* Shadows */
-  --shadow-sm: 0 6px 18px rgba(0, 0, 0, 0.08);
-  --shadow-md: 0 10px 26px rgba(5, 8, 102, 0.14);
-  --shadow-lg: 0 16px 40px rgba(5, 8, 102, 0.18);
+  --shadow-sm: 0 8px 20px rgba(5, 8, 102, 0.08);
+  --shadow-md: 0 14px 30px rgba(5, 8, 102, 0.12);
+  --shadow-lg: 0 20px 44px rgba(5, 8, 102, 0.16);
 
   /* Typography */
   --font-family: 'Poppins', system-ui, -apple-system, 'Segoe UI', sans-serif;

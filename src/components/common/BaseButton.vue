@@ -31,11 +31,11 @@ defineProps({
   align-items: center;
   justify-content: center;
   gap: 8px;
-  border-radius: 10px;
+  border-radius: 12px;
   border: 1px solid transparent;
   font-weight: 600;
   cursor: pointer;
-  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease;
   color: var(--text-strong);
   background: var(--primary);
   box-shadow: var(--shadow-sm);
@@ -71,17 +71,17 @@ defineProps({
 }
 
 .btn.sm {
-  padding: 6px 10px;
+  padding: 7px 12px;
   font-size: 13px;
 }
 
 .btn.md {
-  padding: 9px 13px;
+  padding: 10px 14px;
   font-size: 14px;
 }
 
 .btn.lg {
-  padding: 11px 15px;
+  padding: 12px 16px;
   font-size: 15px;
 }
 
