@@ -71,11 +71,15 @@ const { currentProfile, sessionRole, resolveDefaultRoute, signOut } = useSession
 
 const menuByRole = {
   client: [
+    { label: 'Início', to: '/cliente/inicio', icon: 'home' },
     { label: 'Empresa', to: '/cliente/empresa', icon: 'business' },
     { label: 'Obras', to: '/cliente/obras', icon: 'construction' },
+    { label: 'Meus Orçamentos', to: '/cliente/orcamentos', icon: 'request_quote' },
     { label: 'Projetos', to: '/cliente/projetos', icon: 'folder' },
     { label: 'Entregas', to: '/cliente/entregas', icon: 'local_shipping' },
+    { label: 'Instalações', to: '/cliente/instalacoes', icon: 'engineering' },
     { label: 'Anexos', to: '/cliente/anexos', icon: 'attach_file' },
+    { label: 'Contato / Suporte', to: '/cliente/suporte', icon: 'support_agent' },
   ],
   admin: [
     { label: 'Clientes', to: '/admin/clientes', icon: 'people' },
@@ -90,7 +94,7 @@ const menuByRole = {
 const currentRole = computed(() => sessionRole.value || 'client');
 const currentMenu = computed(() => menuByRole[currentRole.value] || menuByRole.client);
 const currentTitle = computed(() => route.meta?.title || currentMenu.value[0]?.label || 'MilaTec');
-const topbarEyebrow = computed(() => 'PORTAL DO CLIENTE');
+const topbarEyebrow = computed(() => (currentRole.value === 'admin' ? 'ÁREA ADMINISTRATIVA' : 'PORTAL DO CLIENTE'));
 const homeLink = computed(() => resolveDefaultRoute(currentRole.value));
 
 const isActive = (path) => route.path === path || route.path.startsWith(`${path}/`);

@@ -1,36 +1,32 @@
-﻿<template>
+<template>
   <div class="page">
-
     <BaseCard class="table-card">
       <div class="table">
         <div class="table__head">
-          <span>Nome da entrega</span>
-          <span>Projeto vinculado</span>
-          <span>Obra vinculada</span>
-          <span>Data da entrega</span>
-          <span>Quantidade</span>
-          <span>Etapa / status</span>
+          <span>Nome da instalação</span>
+          <span>Data</span>
+          <span>Equipe</span>
+          <span>Status</span>
         </div>
 
         <div class="table__body">
           <div
-            v-for="delivery in deliveries"
-            :key="delivery.id"
+            v-for="installation in installations"
+            :key="installation.id"
             class="table__row"
-            :class="{ 'table__row--pending-date': !delivery.hasDate }"
+            :class="{ 'table__row--pending-date': !installation.hasDate }"
           >
-            <span class="table__cell table__cell--title">{{ delivery.name }}</span>
-            <span class="table__cell table__cell--linked">{{ delivery.projectName }}</span>
-            <span class="table__cell table__cell--linked">{{ delivery.workName }}</span>
+            <span class="table__cell table__cell--title">{{ installation.name }}</span>
             <span class="table__cell">
-              <span class="delivery-date" :class="{ 'delivery-date--pending': !delivery.hasDate }">
-                {{ delivery.displayDate }}
+              <span class="installation-date" :class="{ 'installation-date--pending': !installation.hasDate }">
+                {{ installation.displayDate }}
               </span>
             </span>
-            <span class="table__cell">{{ delivery.quantity }}</span>
+            <span class="table__cell">{{ installation.team }}</span>
             <span class="table__cell">
-              <span class="status-badge" :class="`status-badge--${delivery.tone}`">{{ delivery.status }}</span>
-              <small class="stage-label">{{ delivery.stage }}</small>
+              <span class="status-badge" :class="`status-badge--${installation.tone}`">
+                {{ installation.status }}
+              </span>
             </span>
           </div>
         </div>
@@ -45,7 +41,7 @@ import BaseCard from '@/components/common/BaseCard.vue';
 import { useClientPortalData } from '@/composables/useClientPortalData';
 
 const { portalData } = useClientPortalData();
-const deliveries = computed(() => portalData.value.deliveries);
+const installations = computed(() => portalData.value.installations);
 </script>
 
 <style scoped>
@@ -57,11 +53,10 @@ const deliveries = computed(() => portalData.value.deliveries);
   display: grid;
 }
 
-
 .table__head,
 .table__row {
   display: grid;
-  grid-template-columns: 1.05fr 1fr 1fr 0.8fr 0.8fr 0.8fr;
+  grid-template-columns: 1.25fr 0.75fr 0.95fr 0.75fr;
   gap: 14px;
   align-items: center;
 }
@@ -90,22 +85,17 @@ const deliveries = computed(() => portalData.value.deliveries);
   font-weight: 600;
 }
 
-.table__cell--linked {
-  color: var(--primary);
-  font-weight: 600;
-}
-
 .table__row--pending-date {
   background: rgba(183, 121, 31, 0.08);
   box-shadow: inset 4px 0 0 rgba(183, 121, 31, 0.7);
 }
 
-.delivery-date {
+.installation-date {
   color: var(--text);
   font-weight: 600;
 }
 
-.delivery-date--pending {
+.installation-date--pending {
   display: inline-flex;
   align-items: center;
   min-height: 32px;
@@ -114,14 +104,6 @@ const deliveries = computed(() => portalData.value.deliveries);
   color: #a36715;
   background: rgba(183, 121, 31, 0.12);
   border: 1px solid rgba(183, 121, 31, 0.24);
-}
-
-.stage-label {
-  display: block;
-  margin-top: 6px;
-  color: var(--muted);
-  font-size: 12px;
-  line-height: 1.4;
 }
 
 @media (max-width: 920px) {
@@ -134,5 +116,3 @@ const deliveries = computed(() => portalData.value.deliveries);
   }
 }
 </style>
-
-

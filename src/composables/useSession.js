@@ -9,10 +9,11 @@ const profileDirectory = Object.freeze({
     label: 'Cliente',
     areaLabel: 'Área do Cliente',
     name: 'João Miguel',
-    company: 'Grupo Horizonte',
+    company: 'Grupo Horizonte Participações',
+    companyId: 'emp-grupo-horizonte',
     defaultEmail: 'joao@grupohorizonte.com',
     initials: 'JM',
-    scopeLabel: 'Consulta restrita a empresa, obras, projetos, entregas e anexos vinculados',
+    scopeLabel: 'Consulta restrita a empresa, obras, orçamentos, projetos, entregas, instalações e anexos',
   }),
   admin: Object.freeze({
     role: 'admin',
@@ -20,6 +21,7 @@ const profileDirectory = Object.freeze({
     areaLabel: 'Área Administrativa',
     name: 'Ana Paula',
     company: 'MilaTec',
+    companyId: '',
     defaultEmail: 'operacoes@milatec.com.br',
     initials: 'AP',
     scopeLabel: 'Leitura operacional multiempresa com exposição mínima por perfil',
@@ -73,7 +75,7 @@ export function canAccessRoles(roles, role = sessionRole.value) {
 
 export function resolveDefaultRoute(role = sessionRole.value) {
   if (role === 'admin') return { name: 'admin-clients' };
-  if (role === 'client') return { name: 'client-company' };
+  if (role === 'client') return { name: 'client-home' };
   return { name: 'login' };
 }
 

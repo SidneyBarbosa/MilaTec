@@ -61,10 +61,15 @@
 </template>
 
 <script setup>
+import { computed } from 'vue';
 import BaseCard from '@/components/common/BaseCard.vue';
-import { getClientPortalData } from '@/services/portalData';
+import { useClientPortalData } from '@/composables/useClientPortalData';
 
-const { company, summaryCards, readOnlyRules } = getClientPortalData();
+const { portalData } = useClientPortalData();
+
+const company = computed(() => portalData.value.company);
+const summaryCards = computed(() => portalData.value.summaryCards);
+const readOnlyRules = computed(() => portalData.value.readOnlyRules);
 </script>
 
 <style scoped>

@@ -2,11 +2,15 @@
 import { canAccessRoles, resolveDefaultRoute, sessionRole } from '@/composables/useSession';
 import LoginView from '@/views/auth/LoginReadonlyView.vue';
 import VerifyAccessView from '@/views/auth/VerifyAccessView.vue';
+import ClientHomeView from '@/views/client/ClientStartView.vue';
 import ClientCompanyView from '@/views/client/ClientCompanyView.vue';
 import ClientWorksView from '@/views/client/ClientWorksView.vue';
+import ClientBudgetsView from '@/views/client/ClientBudgetsView.vue';
 import ClientProjectsView from '@/views/client/ClientProjectsTableView.vue';
 import ClientDeliveriesView from '@/views/client/ClientDeliveriesTableView.vue';
+import ClientInstallationsView from '@/views/client/ClientInstallationsView.vue';
 import ClientAttachmentsView from '@/views/client/ClientAttachmentsView.vue';
+import ClientSupportView from '@/views/client/ClientSupportView.vue';
 import AdminClientsView from '@/views/admin/AdminClientsScopeView.vue';
 import AdminWorksView from '@/views/admin/AdminWorksView.vue';
 import AdminProjectsView from '@/views/admin/AdminProjectsView.vue';
@@ -33,7 +37,13 @@ const routes = [
   },
   {
     path: '/cliente',
-    redirect: { name: 'client-company' },
+    redirect: { name: 'client-home' },
+  },
+  {
+    path: '/cliente/inicio',
+    name: 'client-home',
+    component: ClientHomeView,
+    meta: { requiresAuth: true, roles: ['client'], title: 'Início' },
   },
   {
     path: '/cliente/empresa',
@@ -48,6 +58,12 @@ const routes = [
     meta: { requiresAuth: true, roles: ['client'], title: 'Obras' },
   },
   {
+    path: '/cliente/orcamentos',
+    name: 'client-budgets',
+    component: ClientBudgetsView,
+    meta: { requiresAuth: true, roles: ['client'], title: 'Meus Orçamentos' },
+  },
+  {
     path: '/cliente/projetos',
     name: 'client-projects',
     component: ClientProjectsView,
@@ -60,10 +76,22 @@ const routes = [
     meta: { requiresAuth: true, roles: ['client'], title: 'Entregas' },
   },
   {
+    path: '/cliente/instalacoes',
+    name: 'client-installations',
+    component: ClientInstallationsView,
+    meta: { requiresAuth: true, roles: ['client'], title: 'Instalações' },
+  },
+  {
     path: '/cliente/anexos',
     name: 'client-attachments',
     component: ClientAttachmentsView,
     meta: { requiresAuth: true, roles: ['client'], title: 'Anexos' },
+  },
+  {
+    path: '/cliente/suporte',
+    name: 'client-support',
+    component: ClientSupportView,
+    meta: { requiresAuth: true, roles: ['client'], title: 'Contato / Suporte' },
   },
   {
     path: '/admin',

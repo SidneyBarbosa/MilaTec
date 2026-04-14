@@ -1,4 +1,6 @@
-﻿const clientWorks = [
+import { anexos, contatos, empresas, entregas, instalacoes, obras, orcamentos, projetos } from '@/mocks/portalEntities';
+
+const clientWorks = [
   {
     id: 'obra-metalica-440',
     name: 'Metálica 440',
@@ -390,12 +392,271 @@ const adminPortalData = {
   ],
 };
 
+const DEFAULT_COMPANY_ID = 'emp-grupo-horizonte';
+const MOCK_TODAY = new Date('2026-04-14T00:00:00');
+
+const empresasById = Object.fromEntries(empresas.map((empresa) => [empresa.id, empresa]));
+const contatosByEmpresaId = contatos.reduce((acc, contato) => {
+  acc[contato.empresaId] = acc[contato.empresaId] || [];
+  acc[contato.empresaId].push(contato);
+  return acc;
+}, {});
+const obrasById = Object.fromEntries(obras.map((obra) => [obra.id, obra]));
+const orcamentosById = Object.fromEntries(orcamentos.map((orcamento) => [orcamento.id, orcamento]));
+const projetosById = Object.fromEntries(projetos.map((projeto) => [projeto.id, projeto]));
+const entregasById = Object.fromEntries(entregas.map((entrega) => [entrega.id, entrega]));
+
+function parseBrDate(date) {
+  if (!date) return null;
+
+  const [day, month, year] = date.split('/');
+  return new Date(`${year}-${month}-${day}T00:00:00`);
+}
+
+function getUpcoming(items, dateKey = 'date') {
+  const datedItems = items
+    .filter((item) => Boolean(item[dateKey]))
+    .map((item) => ({ ...item, parsedDate: parseBrDate(item[dateKey]) }))
+    .filter((item) => item.parsedDate && item.parsedDate >= MOCK_TODAY)
+    .sort((a, b) => a.parsedDate - b.parsedDate);
+
+  return datedItems[0] || null;
+}
+
+function getVisibleSchedule(items) {
+  return items
+    .filter((item) => {
+      const parsedDate = parseBrDate(item.date);
+      return !parsedDate || parsedDate >= MOCK_TODAY;
+    })
+    .sort((a, b) => {
+      const dateA = parseBrDate(a.date);
+      const dateB = parseBrDate(b.date);
+
+      if (!dateA && !dateB) return 0;
+      if (!dateA) return 1;
+      if (!dateB) return -1;
+      return dateA - dateB;
+    });
+}
+
+function formatCount(count, singular, plural) {
+  return `${count} ${count === 1 ? singular : plural}`;
+}
+
+function resolveCompanyId(companyId) {
+  return empresasById[companyId] ? companyId : DEFAULT_COMPANY_ID;
+}
+
+function resolveContact(companyId) {
+  const companyContacts = contatosByEmpresaId[companyId] || [];
+  return companyContacts.find((contato) => contato.primary) || companyContacts[0] || null;
+}
+
+function resolveAttachmentLink(attachment) {
+  if (attachment.entityType === 'orcamento') {
+    const record = orcamentosById[attachment.entityId];
+    return {
+      linkedTypeLabel: 'Orçamento',
+      linkedRecordName: record?.name || 'Orçamento não vinculado',
+    };
+  }
+
+  if (attachment.entityType === 'projeto') {
+    const record = projetosById[attachment.entityId];
+    return {
+      linkedTypeLabel: 'Projeto',
+      linkedRecordName: record?.name || 'Projeto não vinculado',
+    };
+  }
+
+  if (attachment.entityType === 'entrega') {
+    const record = entregasById[attachment.entityId];
+    return {
+      linkedTypeLabel: 'Entrega',
+      linkedRecordName: record?.name || 'Entrega não vinculada',
+    };
+  }
+
+  return {
+    linkedTypeLabel: 'Arquivo',
+    linkedRecordName: 'Registro vinculado',
+  };
+}
+
+function enrichAttachment(attachment) {
+  return {
+    ...attachment,
+    ...resolveAttachmentLink(attachment),
+  };
+}
+
+function buildClientPortalData(companyId = DEFAULT_COMPANY_ID) {
+  const scopedCompanyId = resolveCompanyId(companyId);
+  const companyRecord = empresasById[scopedCompanyId];
+  const primaryContact = resolveContact(scopedCompanyId);
+  const companyBudgets = orcamentos.filter((orcamento) => orcamento.empresaId === scopedCompanyId);
+  const companyBudgetIds = new Set(companyBudgets.map((orcamento) => orcamento.id));
+  const companyProjects = projetos.filter((projeto) => companyBudgetIds.has(projeto.orcamentoId));
+  const companyProjectIds = new Set(companyProjects.map((projeto) => projeto.id));
+  const companyWorks = obras.filter((obra) => obra.empresaId === scopedCompanyId);
+  const companyDeliveries = entregas.filter((entrega) => companyProjectIds.has(entrega.projetoId));
+  const companyDeliveryIds = new Set(companyDeliveries.map((entrega) => entrega.id));
+  const companyInstallations = instalacoes.filter((instalacao) => companyProjectIds.has(instalacao.projetoId));
+  const companyAttachments = anexos.filter((anexo) => {
+    if (anexo.entityType === 'orcamento') return companyBudgetIds.has(anexo.entityId);
+    if (anexo.entityType === 'projeto') return companyProjectIds.has(anexo.entityId);
+    if (anexo.entityType === 'entrega') return companyDeliveryIds.has(anexo.entityId);
+    return false;
+  });
+
+  const budgetAttachmentsById = companyBudgets.reduce((acc, budget) => {
+    acc[budget.id] = companyAttachments
+      .filter((attachment) => attachment.entityType === 'orcamento' && attachment.entityId === budget.id)
+      .map(enrichAttachment);
+    return acc;
+  }, {});
+
+  const projects = companyProjects.map((project) => {
+    const work = obrasById[project.obraId];
+
+    return {
+      ...project,
+      workName: work?.name || 'Obra não vinculada',
+    };
+  });
+
+  const deliveries = companyDeliveries.map((delivery) => {
+    const linkedProject = projetosById[delivery.projetoId];
+    const linkedWork = linkedProject ? obrasById[linkedProject.obraId] : null;
+    const hasDate = Boolean(delivery.date);
+
+    return {
+      ...delivery,
+      projectName: linkedProject?.name || 'Projeto não vinculado',
+      workName: linkedWork?.name || 'Obra não vinculada',
+      hasDate,
+      displayDate: hasDate ? delivery.date : 'Sem data agendada',
+      tone: hasDate ? delivery.tone : 'warning',
+    };
+  });
+
+  const installations = companyInstallations.map((installation) => {
+    const linkedProject = projetosById[installation.projetoId];
+    const linkedWork = linkedProject ? obrasById[linkedProject.obraId] : null;
+    const hasDate = Boolean(installation.date);
+
+    return {
+      ...installation,
+      projectName: linkedProject?.name || 'Projeto não vinculado',
+      workName: linkedWork?.name || 'Obra não vinculada',
+      hasDate,
+      displayDate: hasDate ? installation.date : 'Sem data agendada',
+      tone: hasDate ? installation.tone : 'warning',
+    };
+  });
+
+  const budgets = companyBudgets.map((budget) => ({
+    ...budget,
+    attachments: budgetAttachmentsById[budget.id] || [],
+  }));
+
+  const activeBudgets = budgets.filter((budget) => budget.active);
+  const inProgressProjects = projects.filter((project) => project.inProgress);
+  const nextDelivery = getUpcoming(deliveries);
+  const nextInstallation = getUpcoming(installations);
+
+  return {
+    company: {
+      id: companyRecord.id,
+      name: companyRecord.name,
+      cityState: `${companyRecord.city}, ${companyRecord.state}`,
+      primaryContact: primaryContact?.name || 'Contato não informado',
+      primaryEmail: primaryContact?.email || 'E-mail não informado',
+      primaryPhone: primaryContact?.phone || 'Telefone não informado',
+    },
+    contacts: contatosByEmpresaId[scopedCompanyId] || [],
+    works: companyWorks,
+    budgets,
+    projects,
+    deliveries,
+    installations,
+    attachments: companyAttachments.map(enrichAttachment),
+    home: {
+      welcomeTitle: `Bem-vindo, ${companyRecord.name}`,
+      welcomeText:
+        'Acompanhe orçamentos, projetos, entregas, instalações e arquivos liberados para a sua empresa.',
+      nextDeliveries: getVisibleSchedule(deliveries).slice(0, 3),
+      nextInstallations: getVisibleSchedule(installations).slice(0, 3),
+      summaryCards: [
+        {
+          label: 'Orçamentos ativos',
+          value: String(activeBudgets.length),
+          detail: formatCount(activeBudgets.length, 'orçamento em acompanhamento', 'orçamentos em acompanhamento'),
+          accent: '#050866',
+        },
+        {
+          label: 'Projetos em andamento',
+          value: String(inProgressProjects.length),
+          detail: formatCount(inProgressProjects.length, 'projeto vinculado', 'projetos vinculados'),
+          accent: '#004AE8',
+        },
+        {
+          label: 'Próxima entrega',
+          value: nextDelivery?.name || 'Sem entrega',
+          detail: nextDelivery ? `${nextDelivery.displayDate} · ${nextDelivery.projectName}` : 'Nenhuma entrega programada',
+          accent: '#00A34A',
+        },
+        {
+          label: 'Próxima instalação',
+          value: nextInstallation?.name || 'Sem instalação',
+          detail: nextInstallation
+            ? `${nextInstallation.displayDate} · ${nextInstallation.team}`
+            : 'Nenhuma instalação programada',
+          accent: '#B7791F',
+        },
+      ],
+    },
+    summaryCards: [
+      {
+        label: 'Empresa vinculada',
+        value: '1 conta',
+        detail: 'Dados exibidos somente para esta empresa',
+        accent: '#050866',
+      },
+      {
+        label: 'Obras publicadas',
+        value: String(companyWorks.length),
+        detail: formatCount(companyWorks.length, 'obra disponível', 'obras disponíveis'),
+        accent: '#004AE8',
+      },
+      {
+        label: 'Projetos visíveis',
+        value: String(projects.length),
+        detail: formatCount(projects.length, 'projeto em consulta', 'projetos em consulta'),
+        accent: '#00A34A',
+      },
+      {
+        label: 'Anexos liberados',
+        value: String(companyAttachments.length),
+        detail: formatCount(companyAttachments.length, 'arquivo disponível', 'arquivos disponíveis'),
+        accent: '#004AE8',
+      },
+    ],
+    readOnlyRules: [
+      'Esta área reúne apenas informações vinculadas à empresa autenticada.',
+      'O portal é visual e não permite alteração de dados operacionais.',
+      'Arquivos e registros aparecem somente quando estão liberados para consulta.',
+    ],
+  };
+}
+
 function clone(value) {
   return JSON.parse(JSON.stringify(value));
 }
 
-export function getClientPortalData() {
-  return clone(clientPortalData);
+export function getClientPortalData(companyId = DEFAULT_COMPANY_ID) {
+  return clone(buildClientPortalData(companyId));
 }
 
 export function getAdminPortalData() {

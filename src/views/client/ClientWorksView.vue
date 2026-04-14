@@ -10,7 +10,7 @@
         </div>
 
         <div class="table__body">
-          <div v-for="work in works" :key="work.name" class="table__row">
+          <div v-for="work in works" :key="work.id" class="table__row">
             <span class="table__cell table__cell--title">{{ work.name }}</span>
             <span class="table__cell">{{ work.city }}</span>
             <span class="table__cell">
@@ -24,10 +24,12 @@
 </template>
 
 <script setup>
+import { computed } from 'vue';
 import BaseCard from '@/components/common/BaseCard.vue';
-import { getClientPortalData } from '@/services/portalData';
+import { useClientPortalData } from '@/composables/useClientPortalData';
 
-const { works } = getClientPortalData();
+const { portalData } = useClientPortalData();
+const works = computed(() => portalData.value.works);
 </script>
 
 <style scoped>
