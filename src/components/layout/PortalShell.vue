@@ -29,13 +29,6 @@
       </nav>
 
       <div class="sidebar__footer">
-        <div class="sidebar__session-card">
-          <span class="sidebar__session-label">{{ currentProfile?.label }}</span>
-          <strong>{{ currentProfile?.name }}</strong>
-          <small>{{ currentProfile?.email }}</small>
-          <p>{{ currentProfile?.scopeLabel }}</p>
-        </div>
-
         <button type="button" class="sidebar__logout" @click="onSignOut">
           Encerrar sessão
         </button>
@@ -175,53 +168,13 @@ const onSignOut = () => {
   border-radius: 12px;
 }
 
-.sidebar__brand-copy strong,
-.sidebar__session-card strong,
-.sidebar__session-card small,
-.sidebar__session-card p {
+.sidebar__brand-copy strong {
   display: block;
 }
 
 .sidebar__brand-copy strong {
   font-size: 15px;
   line-height: 1.1;
-}
-
-.sidebar__session-card {
-  padding: 14px;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.sidebar__session-label {
-  display: inline-flex;
-  align-items: center;
-  min-height: 28px;
-  padding: 0 10px;
-  border-radius: 999px;
-  background: rgba(0, 163, 74, 0.16);
-  color: #a4f0bf;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.sidebar__session-card p {
-  margin: 10px 0 0;
-  color: rgba(255, 255, 255, 0.92);
-}
-
-.sidebar__session-card small {
-  margin-top: 6px;
-  color: rgba(255, 255, 255, 0.72);
-  line-height: 1.55;
-}
-
-.sidebar__session-card strong {
-  margin-top: 10px;
-  font-size: 16px;
 }
 
 .sidebar__menu {
@@ -483,10 +436,6 @@ const onSignOut = () => {
   .sidebar__group-items {
     grid-auto-flow: column;
     grid-auto-columns: minmax(132px, 1fr);
-  }
-
-  .sidebar__session-card {
-    display: none;
   }
 
   .sidebar__footer {

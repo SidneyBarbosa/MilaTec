@@ -18,7 +18,6 @@
             </span>
             <span class="table__cell">
               <span class="category-chip" :class="categoryClass(attachment.category)">
-                <span class="material-icons" aria-hidden="true">{{ categoryIcon(attachment.category) }}</span>
                 {{ attachment.category }}
               </span>
             </span>
@@ -76,7 +75,6 @@
         <header class="preview-modal__header">
           <div>
             <span class="category-chip" :class="categoryClass(previewAttachment.category)">
-              <span class="material-icons" aria-hidden="true">{{ categoryIcon(previewAttachment.category) }}</span>
               {{ previewAttachment.category }}
             </span>
             <h3>{{ previewAttachment.name }}</h3>
@@ -161,29 +159,6 @@ const handleDownload = (event, attachment) => {
   if (!attachment.href || attachment.href === '#') {
     event.preventDefault();
   }
-};
-
-const categoryIcon = (category) => {
-  const iconByCategory = {
-    Orçamento: 'request_quote',
-    'Proposta comercial': 'request_quote',
-    Projeto: 'architecture',
-    'Pré-projeto': 'draw',
-    'Projeto executivo': 'architecture',
-    'Projeto aprovação': 'approval',
-    'Projeto para aprovação': 'approval',
-    'Registro de obra': 'assignment_turned_in',
-    'Fotos da obra': 'photo_camera',
-    'Memorial de cálculo': 'functions',
-    ART: 'verified',
-    'Pedido de compra': 'shopping_cart',
-    Cronograma: 'event_note',
-    Logística: 'local_shipping',
-    Romaneio: 'inventory_2',
-    'Nota fiscal': 'receipt_long',
-  };
-
-  return iconByCategory[category] || 'description';
 };
 
 const categoryClass = (category) => {
@@ -277,7 +252,6 @@ const categoryClass = (category) => {
 .category-chip {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
   min-height: 34px;
   padding: 0 11px;
   border-radius: 8px;
@@ -286,10 +260,6 @@ const categoryClass = (category) => {
   background: rgba(0, 74, 232, 0.08);
   font-size: 12px;
   font-weight: 800;
-}
-
-.category-chip .material-icons {
-  font-size: 18px;
 }
 
 .category-chip--nota-fiscal,

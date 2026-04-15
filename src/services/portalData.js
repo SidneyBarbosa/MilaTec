@@ -119,13 +119,6 @@ const clientPortalData = {
       href: '#',
       actionLabel: 'Baixar',
     },
-    {
-      name: 'memorial-descritivo-v3.pdf',
-      category: 'Engenharia',
-      uploadedAt: '29/03/2026',
-      href: '#',
-      actionLabel: 'Visualizar',
-    },
   ],
   summaryCards: [
     {
