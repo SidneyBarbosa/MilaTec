@@ -1,7 +1,12 @@
 ﻿<template>
   <div class="page page--wide">
     <section class="kanban-board" aria-label="Obras por etapa">
-      <article v-for="column in kanbanColumns" :key="column.stage" class="kanban-column">
+      <article
+        v-for="column in kanbanColumns"
+        :key="column.stage"
+        class="kanban-column"
+        :style="stageStyle(column.stage, 'work')"
+      >
         <header class="kanban-column__header">
           <div>
             <span class="column-label">Etapa</span>
@@ -18,11 +23,21 @@
             type="button"
             @click="selectWork(work)"
           >
-            <span class="status-badge status-badge--info">{{ work.budgetType }}</span>
-            <strong>{{ work.name }}</strong>
-            <span class="kanban-card__meta">
-              <span class="material-icons" aria-hidden="true">location_on</span>
-              {{ work.city }}
+            <span class="kanban-card__title">{{ work.name }}</span>
+
+            <span class="kanban-card__fields">
+              <span class="kanban-card__field">
+                <span>Tipo de orçamento</span>
+                <strong>{{ work.budgetType }}</strong>
+              </span>
+              <span class="kanban-card__field">
+                <span>Cidade</span>
+                <strong>{{ work.city }}</strong>
+              </span>
+              <span class="kanban-card__field">
+                <span>Data relacionada</span>
+                <strong>{{ work.linkedDeliveries[0]?.displayDate || 'Sem data' }}</strong>
+              </span>
             </span>
           </button>
 
@@ -42,90 +57,233 @@
       @click.self="closeDetail"
     >
       <section
-        class="detail-modal"
+        class="detail-modal record-modal"
         role="dialog"
         aria-modal="true"
         :aria-label="`Detalhes da obra ${selectedWork.name}`"
       >
-        <header class="detail-modal__header">
+        <header class="record-modal__header">
           <div>
-            <p class="pill">Detalhe da obra</p>
             <h3>{{ selectedWork.name }}</h3>
+            <p>{{ portalCompany.name }} · {{ selectedWork.city }}</p>
           </div>
-          <button class="modal-close" type="button" aria-label="Fechar detalhe" @click="closeDetail">
-            <span class="material-icons" aria-hidden="true">close</span>
-          </button>
+
+          <div class="record-modal__actions">
+            <button class="icon-button" type="button" aria-label="Imprimir detalhe">
+              <span class="material-icons" aria-hidden="true">print</span>
+            </button>
+            <button class="icon-button" type="button" aria-label="Copiar link">
+              <span class="material-icons" aria-hidden="true">link</span>
+            </button>
+            <button class="icon-button" type="button" aria-label="Fechar detalhe" @click="closeDetail">
+              <span class="material-icons" aria-hidden="true">close</span>
+            </button>
+          </div>
         </header>
 
-        <div class="detail-grid">
-          <div>
-            <span>Nome</span>
-            <strong>{{ selectedWork.name }}</strong>
-          </div>
-          <div>
-            <span>Cidade</span>
-            <strong>{{ selectedWork.city }}</strong>
-          </div>
-          <div>
-            <span>Quantidade</span>
-            <strong>{{ selectedWork.quantity }}</strong>
-          </div>
-          <div>
-            <span>Valor</span>
-            <strong>{{ selectedWork.value }}</strong>
-          </div>
-          <div>
-            <span>Tipo de orçamento</span>
-            <strong>{{ selectedWork.budgetType }}</strong>
-          </div>
-          <div>
-            <span>Etapa</span>
-            <strong>{{ selectedWork.stage }}</strong>
-          </div>
-        </div>
+        <nav class="record-tabs" aria-label="Seções da obra">
+          <button class="record-tabs__item record-tabs__item--active" type="button" @click="scrollDetailSection('work-record-obra')">
+            Obra
+          </button>
+          <button class="record-tabs__item" type="button" @click="scrollDetailSection('work-record-projetos')">
+            Projetos
+          </button>
+          <button class="record-tabs__item" type="button" @click="scrollDetailSection('work-record-entregas')">
+            Entregas
+          </button>
+          <button class="record-tabs__item" type="button" @click="scrollDetailSection('work-record-registros')">
+            Registros
+          </button>
+        </nav>
 
-        <section class="detail-section">
-          <h4>Projetos vinculados</h4>
-          <ul v-if="selectedWork.linkedProjects.length" class="summary-list">
-            <li v-for="project in selectedWork.linkedProjects" :key="project.id">
-              <button class="summary-link" type="button" @click="goToProject(project.id)">
+        <div class="record-modal__content">
+          <section id="work-record-obra" class="record-section">
+            <h4>Obra</h4>
+
+            <div class="record-field-grid">
+              <div class="record-field">
+                <span>Cidade da Obra</span>
+                <strong>{{ displayValue(selectedWork.city) }}</strong>
+              </div>
+              <div class="record-field">
+                <span>Quantidade</span>
+                <strong>{{ displayValue(selectedWork.quantity) }}</strong>
+              </div>
+              <div class="record-field">
+                <span>Valor</span>
+                <strong>{{ displayValue(selectedWork.value) }}</strong>
+              </div>
+              <div class="record-field">
+                <span>Tipo de Obra</span>
+                <div class="chip-list">
+                  <span v-for="type in budgetTypeChips(selectedWork)" :key="type" class="record-chip record-chip--green">
+                    {{ type }}
+                  </span>
+                </div>
+              </div>
+              <div class="record-field">
+                <span>Etapa de Negócio</span>
+                <span class="record-chip record-chip--stage" :style="stageStyle(selectedWork.stage, 'work')">
+                  {{ selectedWork.stage }}
+                </span>
+              </div>
+              <div class="record-field">
+                <span>Produto (from Projetos)</span>
+                <strong>{{ productsLabel(selectedWork) }}</strong>
+              </div>
+            </div>
+
+            <div class="record-two-columns">
+              <div class="company-record">
+                <span>Empresa</span>
+                <strong>{{ portalCompany.name }}</strong>
+                <div class="chip-list">
+                  <span class="record-chip record-chip--green">Cliente recorrente</span>
+                  <span class="record-chip record-chip--muted">{{ portalCompany.cityState }}</span>
+                </div>
+              </div>
+
+              <div class="contact-record">
+                <span>Contato do Orçamento</span>
+                <strong>{{ portalCompany.primaryContact }}</strong>
+                <small>{{ portalCompany.primaryEmail }} · {{ portalCompany.primaryPhone }}</small>
+              </div>
+            </div>
+
+            <div class="attachment-slots">
+              <div v-for="slot in workAttachmentSlots(selectedWork)" :key="slot.label" class="attachment-slot">
+                <span>{{ slot.label }}</span>
+                <a
+                  v-if="slot.attachment"
+                  :href="slot.attachment.href"
+                  class="attachment-action"
+                  :aria-label="slot.attachment.actionLabel"
+                >
+                  <span class="material-icons" aria-hidden="true">{{ resolveActionIcon(slot.attachment.actionLabel) }}</span>
+                  <span>{{ slot.attachment.name }}</span>
+                </a>
+                <strong v-else>Sem anexos</strong>
+              </div>
+            </div>
+          </section>
+
+          <section id="work-record-projetos" class="record-section">
+            <h4>Projetos</h4>
+
+            <div class="record-summary-grid">
+              <div>
+                <span>Valor Total</span>
+                <strong>{{ displayValue(selectedWork.value) }}</strong>
+              </div>
+              <div>
+                <span>Quantidade Total</span>
+                <strong>{{ displayValue(selectedWork.quantity) }}</strong>
+              </div>
+            </div>
+
+            <div class="record-table">
+              <div class="record-table__head">
+                <span>Projeto</span>
+                <span>Produto</span>
+                <span>Etapa</span>
+                <span>Quantidade</span>
+                <span>Valor</span>
+              </div>
+              <button
+                v-for="project in selectedWork.linkedProjects"
+                :key="project.id"
+                class="record-table__row"
+                type="button"
+                @click="goToProject(project.id)"
+              >
                 <strong>{{ project.name }}</strong>
-                <span>{{ project.stage }} · {{ project.quantity }} · {{ project.totalValue }}</span>
+                <span>{{ displayValue(project.product) }}</span>
+                <span>{{ displayValue(project.stage) }}</span>
+                <span>{{ displayValue(project.quantity) }}</span>
+                <span>{{ displayValue(project.totalValue) }}</span>
               </button>
-            </li>
-          </ul>
-          <p v-else>Nenhum projeto vinculado.</p>
-        </section>
+              <p v-if="!selectedWork.linkedProjects.length" class="record-empty">Sem projetos vinculados.</p>
+            </div>
+          </section>
 
-        <section class="detail-section">
-          <h4>Entregas vinculadas</h4>
-          <ul v-if="selectedWork.linkedDeliveries.length" class="summary-list">
-            <li v-for="delivery in selectedWork.linkedDeliveries" :key="delivery.id">
-              <button class="summary-link" type="button" @click="goToDelivery(delivery.id)">
+          <section id="work-record-entregas" class="record-section">
+            <h4>Entregas</h4>
+
+            <div class="record-table">
+              <div class="record-table__head record-table__head--deliveries">
+                <span>Entrega</span>
+                <span>Data</span>
+                <span>Quantidade</span>
+                <span>Valor</span>
+                <span>Status</span>
+              </div>
+              <button
+                v-for="delivery in selectedWork.linkedDeliveries"
+                :key="delivery.id"
+                class="record-table__row record-table__row--deliveries"
+                type="button"
+                @click="goToDelivery(delivery.id)"
+              >
                 <strong>{{ delivery.name }}</strong>
-                <span>{{ delivery.displayDate }} · {{ delivery.status }}</span>
+                <span>{{ displayValue(delivery.displayDate) }}</span>
+                <span>{{ displayValue(delivery.quantity) }}</span>
+                <span>{{ displayValue(delivery.value) }}</span>
+                <span>{{ displayValue(delivery.status) }}</span>
               </button>
-            </li>
-          </ul>
-          <p v-else>Nenhuma entrega vinculada.</p>
-        </section>
+              <p v-if="!selectedWork.linkedDeliveries.length" class="record-empty">Sem entregas vinculadas.</p>
+            </div>
 
-        <section class="detail-section">
-          <h4>Anexos</h4>
-          <div v-if="selectedWork.attachments.length" class="attachment-list">
-            <a
-              v-for="attachment in selectedWork.attachments"
-              :key="attachment.id"
-              :href="attachment.href"
-              class="attachment-action"
-              :aria-label="attachment.actionLabel"
-            >
-              <span class="material-icons" aria-hidden="true">{{ resolveActionIcon(attachment.actionLabel) }}</span>
-              <span>{{ attachment.name }}</span>
-            </a>
-          </div>
-          <p v-else>Nenhum anexo liberado para esta obra.</p>
-        </section>
+            <div class="record-two-columns">
+              <div class="attachment-panel">
+                <span>Pedido de Compra (anexo)</span>
+                <a
+                  v-if="purchaseOrderAttachment(selectedWork)"
+                  :href="purchaseOrderAttachment(selectedWork).href"
+                  class="attachment-action"
+                  :aria-label="purchaseOrderAttachment(selectedWork).actionLabel"
+                >
+                  <span class="material-icons" aria-hidden="true">
+                    {{ resolveActionIcon(purchaseOrderAttachment(selectedWork).actionLabel) }}
+                  </span>
+                  <span>{{ purchaseOrderAttachment(selectedWork).name }}</span>
+                </a>
+                <strong v-else>Sem anexos</strong>
+              </div>
+
+              <div class="address-panel">
+                <span>Endereço de entrega</span>
+                <strong>{{ displayValue(selectedWork.city) }}</strong>
+                <small>{{ portalCompany.name }}</small>
+              </div>
+            </div>
+          </section>
+
+          <section id="work-record-registros" class="record-section">
+            <h4>Registros</h4>
+
+            <div class="record-photo-field">
+              <span>Fotos da Obra</span>
+              <div class="record-photo-box">
+                <template v-if="registrationAttachments(selectedWork).length">
+                  <a
+                    v-for="attachment in registrationAttachments(selectedWork)"
+                    :key="attachment.id"
+                    :href="attachment.href"
+                    class="attachment-action"
+                    :aria-label="attachment.actionLabel"
+                  >
+                    <span class="material-icons" aria-hidden="true">{{ resolveActionIcon(attachment.actionLabel) }}</span>
+                    <span>{{ attachment.name }}</span>
+                  </a>
+                </template>
+                <template v-else>
+                  <span class="material-icons" aria-hidden="true">photo_camera</span>
+                  <strong>Sem fotos liberadas</strong>
+                </template>
+              </div>
+            </div>
+          </section>
+        </div>
       </section>
     </div>
   </div>
@@ -135,6 +293,7 @@
 import { computed, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useClientPortalData } from '@/composables/useClientPortalData';
+import { stageStyle } from '@/utils/stageColors';
 
 const route = useRoute();
 const router = useRouter();
@@ -143,6 +302,7 @@ const selectedWorkId = ref('');
 const columnLimits = ref({});
 const kanbanPageSize = 6;
 
+const portalCompany = computed(() => portalData.value.company);
 const works = computed(() => portalData.value.works);
 const selectedWork = computed(() => works.value.find((work) => work.id === selectedWorkId.value) || null);
 const kanbanColumns = computed(() => {
@@ -195,6 +355,63 @@ const showMore = (stage) => {
   };
 };
 
+const displayValue = (value) => value || '-';
+
+const uniqueValues = (values) => [...new Set(values.filter(Boolean))];
+
+const budgetTypeChips = (work) => {
+  const values = work?.budgetTypes?.length ? work.budgetTypes : [work?.budgetType];
+  return uniqueValues(values).length ? uniqueValues(values) : ['Não informado'];
+};
+
+const productsLabel = (work) => {
+  const products = uniqueValues((work?.linkedProjects || []).map((project) => project.product));
+  return products.length ? products.join(' + ') : '-';
+};
+
+const normalizeText = (value) =>
+  String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+
+const attachmentMatchesCategory = (attachment, categories) => {
+  const normalizedCategory = normalizeText(attachment.category);
+  return categories.some((category) => normalizedCategory === normalizeText(category));
+};
+
+const findWorkAttachment = (work, categories) =>
+  (work?.attachments || []).find((attachment) => attachmentMatchesCategory(attachment, categories)) || null;
+
+const workAttachmentSlots = (work) => [
+  {
+    label: 'Proposta Comercial (anexo)',
+    attachment: findWorkAttachment(work, ['Orçamento']),
+  },
+  {
+    label: 'Memorial de Cálculo',
+    attachment: findWorkAttachment(work, ['Projeto executivo']),
+  },
+  {
+    label: 'ART',
+    attachment: findWorkAttachment(work, ['Registro de obra']),
+  },
+  {
+    label: 'Contrato (anexo)',
+    attachment: findWorkAttachment(work, ['Projeto aprovação']),
+  },
+];
+
+const purchaseOrderAttachment = (work) => findWorkAttachment(work, ['Pedido de compra']);
+
+const registrationAttachments = (work) =>
+  (work?.attachments || []).filter((attachment) => attachmentMatchesCategory(attachment, ['Registro de obra']));
+
+const scrollDetailSection = (sectionId) => {
+  if (typeof document === 'undefined') return;
+  document.getElementById(sectionId)?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+};
+
 const resolveActionIcon = (actionLabel) => {
   const iconByAction = {
     Visualizar: 'visibility',
@@ -208,53 +425,57 @@ const resolveActionIcon = (actionLabel) => {
 <style scoped>
 .kanban-board {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 18px;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 304px));
+  gap: 14px;
   align-items: start;
+  justify-content: start;
 }
 
 .kanban-column {
   display: grid;
-  min-height: 320px;
-  border: 1px solid var(--stroke-soft);
+  min-height: 280px;
+  border: 1px solid var(--stage-border, var(--stroke-soft));
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.76);
-  box-shadow: 0 16px 34px rgba(5, 8, 102, 0.08);
+  background: rgba(255, 255, 255, 0.68);
   overflow: hidden;
+  box-shadow: inset 4px 0 0 var(--stage-color, var(--primary)), 0 10px 22px rgba(5, 8, 102, 0.06);
 }
 
 .kanban-column__header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 12px;
-  padding: 18px;
-  border-bottom: 1px solid var(--stroke-soft);
-  background: linear-gradient(180deg, rgba(246, 249, 255, 0.98), rgba(241, 246, 255, 0.92));
+  gap: 10px;
+  padding: 14px;
+  border-bottom: 1px solid var(--stage-border, var(--stroke-soft));
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0.72)),
+    var(--stage-bg, rgba(241, 246, 255, 0.92));
 }
 
 .kanban-column__header h3 {
-  color: var(--text-strong);
-  font-size: 18px;
+  color: var(--stage-color, var(--text-strong));
+  font-size: 15px;
+  line-height: 1.25;
 }
 
 .kanban-column__header strong {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   border-radius: 999px;
-  color: var(--primary);
-  background: rgba(0, 74, 232, 0.08);
-  border: 1px solid rgba(0, 74, 232, 0.14);
+  color: var(--stage-color, var(--primary));
+  background: var(--stage-bg, rgba(0, 74, 232, 0.08));
+  border: 1px solid var(--stage-border, rgba(0, 74, 232, 0.14));
 }
 
 .column-label {
   display: block;
   margin-bottom: 6px;
   color: var(--muted);
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -262,23 +483,23 @@ const resolveActionIcon = (actionLabel) => {
 
 .kanban-column__body {
   display: grid;
-  gap: 12px;
+  gap: 9px;
   align-content: start;
-  padding: 14px;
+  padding: 10px;
 }
 
 .kanban-card {
   display: grid;
-  gap: 12px;
+  gap: 10px;
   width: 100%;
-  min-height: 150px;
-  padding: 16px;
-  border: 1px solid var(--stroke-soft);
+  min-height: auto;
+  padding: 12px;
+  border: 1px solid #e6edf6;
   border-radius: 8px;
   text-align: left;
   color: var(--text);
   background: #ffffff;
-  box-shadow: 0 12px 24px rgba(5, 8, 102, 0.08);
+  box-shadow: 0 6px 14px rgba(5, 8, 102, 0.05);
   cursor: pointer;
   transition:
     transform 0.2s ease,
@@ -288,30 +509,44 @@ const resolveActionIcon = (actionLabel) => {
 
 .kanban-card:hover,
 .kanban-card:focus-visible {
-  transform: translateY(-2px);
-  border-color: rgba(0, 74, 232, 0.24);
-  box-shadow: 0 18px 30px rgba(5, 8, 102, 0.12);
+  transform: translateY(-1px);
+  border-color: rgba(0, 74, 232, 0.2);
+  box-shadow: 0 10px 18px rgba(5, 8, 102, 0.08);
   outline: none;
 }
 
-.kanban-card strong {
+.kanban-card__title {
   display: block;
   color: var(--text-strong);
-  font-size: 18px;
-  line-height: 1.35;
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.28;
 }
 
-.kanban-card__meta {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
+.kanban-card__fields {
+  display: grid;
+  gap: 7px;
+}
+
+.kanban-card__field {
+  display: grid;
+  gap: 2px;
+}
+
+.kanban-card__field span {
   color: var(--muted);
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  line-height: 1.2;
+  text-transform: uppercase;
 }
 
-.kanban-card__meta .material-icons {
-  font-size: 18px;
+.kanban-card__field strong {
+  color: #15204a;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.3;
 }
 
 .empty-state {
@@ -342,155 +577,389 @@ const resolveActionIcon = (actionLabel) => {
   position: fixed;
   inset: 0;
   z-index: 50;
-  display: grid;
-  place-items: center;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  overflow: auto;
   padding: 24px;
-  background: rgba(5, 8, 102, 0.48);
+  background: rgba(18, 23, 42, 0.38);
 }
 
-.detail-modal {
-  display: grid;
-  gap: 18px;
-  width: min(920px, 100%);
-  max-height: min(820px, calc(100vh - 48px));
+.record-modal {
+  width: min(1080px, 100%);
+  max-height: calc(100vh - 48px);
   overflow: auto;
-  padding: 22px;
+  padding: 0;
   border-radius: 8px;
-  background: var(--card);
+  background: #ffffff;
   box-shadow: var(--shadow-lg);
 }
 
-.detail-modal__header {
+.record-modal__header {
+  position: sticky;
+  top: 0;
+  z-index: 2;
   display: flex;
   justify-content: space-between;
   gap: 16px;
   align-items: flex-start;
+  padding: 30px 32px 22px;
+  border-bottom: 1px solid #e7ecf3;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(12px);
 }
 
-.detail-modal__header h3 {
-  margin-top: 8px;
-  color: var(--text-strong);
-  font-size: 24px;
-}
-
-.modal-close {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  border: 1px solid var(--stroke-soft);
-  border-radius: 8px;
-  color: var(--text-strong);
-  background: #f7faff;
-  cursor: pointer;
-}
-
-.modal-close:hover,
-.modal-close:focus-visible {
-  border-color: rgba(0, 74, 232, 0.24);
-  color: var(--primary);
-  outline: none;
-}
-
-.detail-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-  gap: 12px;
-}
-
-.detail-grid div {
-  min-height: 92px;
-  padding: 14px;
-  border: 1px solid var(--stroke-soft);
-  border-radius: 8px;
-  background: #f7faff;
-}
-
-.detail-grid span,
-.detail-grid strong {
-  display: block;
-}
-
-.detail-grid span {
-  color: var(--muted);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
+.record-modal__header h3 {
+  color: #202332;
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1.22;
   text-transform: uppercase;
 }
 
-.detail-grid strong {
+.record-modal__header p {
   margin-top: 8px;
-  color: var(--text-strong);
-  font-size: 16px;
-  line-height: 1.4;
+  color: #687083;
+  font-size: 13px;
+  line-height: 1.5;
 }
 
-.detail-section {
-  display: grid;
-  gap: 12px;
+.record-modal__actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
 }
 
-.detail-section h4 {
-  margin: 0;
-  color: var(--text-strong);
-  font-size: 16px;
-}
-
-.summary-list {
-  display: grid;
-  gap: 10px;
-  padding: 0;
-  list-style: none;
-}
-
-.summary-list li {
-  padding: 12px;
-  border: 1px solid var(--stroke-soft);
+.icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid transparent;
   border-radius: 8px;
-  background: rgba(246, 249, 255, 0.72);
+  color: #353b4c;
+  background: transparent;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
 }
 
-.summary-link {
-  display: grid;
-  gap: 4px;
-  width: 100%;
+.icon-button:hover,
+.icon-button:focus-visible {
+  border-color: #dfe5ee;
+  color: var(--primary);
+  background: #f5f7fb;
+  outline: none;
+}
+
+.icon-button .material-icons {
+  font-size: 19px;
+}
+
+.record-tabs {
+  display: flex;
+  gap: 22px;
+  padding: 0 32px;
+  border-bottom: 1px solid #e7ecf3;
+  background: #ffffff;
+}
+
+.record-tabs__item {
+  min-height: 44px;
   padding: 0;
   border: none;
-  text-align: left;
+  border-bottom: 2px solid transparent;
+  color: #39445a;
   background: transparent;
+  font-size: 12px;
+  font-weight: 600;
   cursor: pointer;
 }
 
-.summary-link:hover strong,
-.summary-link:focus-visible strong {
-  color: var(--primary);
+.record-tabs__item:hover,
+.record-tabs__item:focus-visible,
+.record-tabs__item--active {
+  color: #111827;
+  border-bottom-color: #111827;
+  outline: none;
 }
 
-.summary-link:focus-visible {
-  outline: 2px solid rgba(0, 74, 232, 0.24);
-  outline-offset: 4px;
-}
-
-.summary-list strong {
-  color: var(--text-strong);
-}
-
-.summary-list span {
-  color: var(--muted);
-  font-size: 14px;
-}
-
-.attachment-list {
+.record-modal__content {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 26px;
+  padding: 18px 16px 28px;
+  background: #ffffff;
+}
+
+.record-section {
+  display: grid;
+  gap: 18px;
+  padding: 18px;
+  border: 1px solid #edf1f7;
+  border-radius: 8px;
+  background: #f5f7fb;
+  scroll-margin-top: 160px;
+}
+
+.record-section h4 {
+  color: #202332;
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.record-field-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(160px, 1fr));
+  gap: 18px 22px;
+}
+
+.record-field,
+.record-summary-grid > div,
+.company-record,
+.contact-record,
+.attachment-slot,
+.attachment-panel,
+.address-panel {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  min-width: 0;
+}
+
+.record-field > span,
+.record-summary-grid span,
+.company-record span,
+.contact-record span,
+.attachment-slot > span,
+.attachment-panel > span,
+.address-panel span,
+.record-photo-field > span {
+  color: #202332;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.record-field strong,
+.record-summary-grid strong,
+.company-record strong,
+.contact-record strong,
+.attachment-panel strong,
+.address-panel strong {
+  color: #202332;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.record-two-columns {
+  display: grid;
+  grid-template-columns: minmax(240px, 1fr) minmax(240px, 1fr);
   gap: 10px;
 }
 
-.attachment-list .attachment-action {
+.company-record,
+.contact-record,
+.attachment-panel,
+.address-panel {
+  min-height: 68px;
+  padding: 12px;
+  border: 1px solid #dfe5ee;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.contact-record small,
+.address-panel small {
+  color: #6b7280;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.record-chip {
+  display: inline-flex;
+  align-items: center;
+  width: max-content;
+  min-height: 22px;
+  padding: 0 9px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  color: #1f2937;
+  background: #eef2f7;
+}
+
+.record-chip--green {
+  color: #0d5f35;
+  background: rgba(0, 163, 74, 0.18);
+}
+
+.record-chip--muted {
+  color: #4b5563;
+  background: #eef2f7;
+}
+
+.record-chip--stage {
+  color: var(--stage-color, #1450c8);
+  border: 1px solid var(--stage-border, rgba(20, 80, 200, 0.12));
+  background: var(--stage-bg, rgba(20, 80, 200, 0.08));
+}
+
+.attachment-slots {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(220px, 1fr));
+  gap: 18px 26px;
+}
+
+.attachment-slot {
+  min-height: 78px;
+}
+
+.attachment-slot strong,
+.attachment-panel strong {
+  display: grid;
+  place-items: center;
+  min-height: 38px;
+  border: 1px solid #dfe5ee;
+  border-radius: 4px;
+  color: #a0a7b4;
+  background: rgba(255, 255, 255, 0.4);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.attachment-slot .attachment-action,
+.attachment-panel .attachment-action,
+.record-photo-box .attachment-action {
   justify-content: flex-start;
   border-radius: 8px;
+  background: #ffffff;
+}
+
+.record-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(180px, 1fr));
+  gap: 22px;
+}
+
+.record-table {
+  display: grid;
+  overflow-x: auto;
+}
+
+.record-table__head,
+.record-table__row {
+  display: grid;
+  grid-template-columns:
+    minmax(180px, 1.15fr)
+    minmax(180px, 1fr)
+    minmax(150px, 0.85fr)
+    minmax(130px, 0.7fr)
+    minmax(130px, 0.75fr);
+  min-width: 760px;
+  align-items: center;
+  gap: 12px;
+}
+
+.record-table__head--deliveries,
+.record-table__row--deliveries {
+  grid-template-columns:
+    minmax(190px, 1.2fr)
+    minmax(130px, 0.75fr)
+    minmax(130px, 0.75fr)
+    minmax(130px, 0.75fr)
+    minmax(130px, 0.75fr);
+}
+
+.record-table__head {
+  min-height: 32px;
+  padding: 0 12px;
+  border: 1px solid #dfe5ee;
+  color: #7b8495;
+  background: #f3f6fa;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.record-table__row {
+  min-height: 42px;
+  padding: 8px 12px;
+  border: 1px solid #dfe5ee;
+  border-top: none;
+  text-align: left;
+  color: #202332;
+  background: #ffffff;
+  cursor: pointer;
+}
+
+.record-table__row:hover,
+.record-table__row:focus-visible {
+  color: var(--primary);
+  background: #f9fbff;
+  outline: none;
+}
+
+.record-table__row strong,
+.record-table__row span {
+  min-width: 0;
+  overflow: hidden;
+  font-size: 12px;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.record-table__row strong {
+  font-weight: 700;
+}
+
+.record-empty {
+  display: grid;
+  place-items: center;
+  min-height: 38px;
+  border: 1px solid #dfe5ee;
+  color: #a0a7b4;
+  font-size: 12px;
+  background: #ffffff;
+}
+
+.record-photo-field {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 18px;
+  align-items: start;
+}
+
+.record-photo-box {
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 10px;
+  min-height: 180px;
+  padding: 18px;
+  border: 1px solid #dfe5ee;
+  border-radius: 8px;
+  color: #a0a7b4;
+  background: rgba(255, 255, 255, 0.42);
+}
+
+.record-photo-box .material-icons {
+  font-size: 28px;
+}
+
+.record-photo-box strong {
+  color: #a0a7b4;
+  font-size: 12px;
+  font-weight: 500;
 }
 
 @media (max-width: 720px) {
@@ -499,12 +968,40 @@ const resolveActionIcon = (actionLabel) => {
   }
 
   .modal-backdrop {
-    align-items: stretch;
-    padding: 12px;
+    padding: 0;
   }
 
-  .detail-modal {
-    max-height: calc(100vh - 24px);
+  .record-modal {
+    width: 100%;
+    max-height: 100vh;
+    min-height: 100vh;
+    border-radius: 0;
+  }
+
+  .record-modal__header {
+    padding: 22px 16px 16px;
+  }
+
+  .record-modal__header h3 {
+    font-size: 22px;
+  }
+
+  .record-tabs {
+    gap: 16px;
+    overflow-x: auto;
+    padding: 0 16px;
+  }
+
+  .record-modal__content {
+    padding: 14px 10px 22px;
+  }
+
+  .record-field-grid,
+  .record-two-columns,
+  .attachment-slots,
+  .record-summary-grid,
+  .record-photo-field {
+    grid-template-columns: 1fr;
   }
 }
 </style>

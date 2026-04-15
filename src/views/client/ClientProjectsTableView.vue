@@ -1,7 +1,12 @@
 ﻿<template>
   <div class="page page--wide">
     <section class="kanban-board" aria-label="Projetos por etapa">
-      <article v-for="column in kanbanColumns" :key="column.stage" class="kanban-column">
+      <article
+        v-for="column in kanbanColumns"
+        :key="column.stage"
+        class="kanban-column"
+        :style="stageStyle(column.stage, 'project')"
+      >
         <header class="kanban-column__header">
           <div>
             <span class="column-label">Etapa do projeto</span>
@@ -17,15 +22,23 @@
             class="kanban-card"
           >
             <button class="kanban-card__main" type="button" @click="selectProject(project)">
-              <span class="status-badge" :class="`status-badge--${project.tone || 'info'}`">
-                {{ project.budgetType }}
-              </span>
-              <strong>{{ project.name }}</strong>
-            </button>
+              <span class="kanban-card__title">{{ project.name }}</span>
 
-            <button class="kanban-card__meta kanban-card__link" type="button" @click="goToWork(project.obraId)">
-              <span class="material-icons" aria-hidden="true">construction</span>
-              {{ project.workName }}
+              <span class="kanban-card__fields">
+                <span class="kanban-card__field">
+                  <span>Obra associada</span>
+                  <strong>{{ project.workName }}</strong>
+                </span>
+                <span class="kanban-card__field">
+                  <span>{{ project.product ? 'Produto' : 'Tipo de orçamento' }}</span>
+                  <strong>{{ project.product || project.budgetType }}</strong>
+                </span>
+                <span class="kanban-card__field">
+                  <span>Quantidade</span>
+                  <strong>{{ project.quantity }}</strong>
+                </span>
+              </span>
+
             </button>
           </article>
 
@@ -122,6 +135,7 @@
 import { computed, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useClientPortalData } from '@/composables/useClientPortalData';
+import { stageStyle } from '@/utils/stageColors';
 
 const route = useRoute();
 const router = useRouter();
@@ -208,18 +222,19 @@ const resolveActionIcon = (actionLabel) => {
 <style scoped>
 .kanban-board {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 18px;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 304px));
+  gap: 14px;
   align-items: start;
+  justify-content: start;
 }
 
 .kanban-column {
   display: grid;
-  min-height: 320px;
-  border: 1px solid var(--stroke-soft);
+  min-height: 280px;
+  border: 1px solid var(--stage-border, var(--stroke-soft));
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.76);
-  box-shadow: 0 16px 34px rgba(5, 8, 102, 0.08);
+  background: rgba(255, 255, 255, 0.68);
+  box-shadow: inset 4px 0 0 var(--stage-color, var(--primary)), 0 10px 22px rgba(5, 8, 102, 0.06);
   overflow: hidden;
 }
 
@@ -227,34 +242,37 @@ const resolveActionIcon = (actionLabel) => {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 12px;
-  padding: 18px;
-  border-bottom: 1px solid var(--stroke-soft);
-  background: linear-gradient(180deg, rgba(246, 249, 255, 0.98), rgba(241, 246, 255, 0.92));
+  gap: 10px;
+  padding: 14px;
+  border-bottom: 1px solid var(--stage-border, var(--stroke-soft));
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0.72)),
+    var(--stage-bg, rgba(241, 246, 255, 0.92));
 }
 
 .kanban-column__header h3 {
-  color: var(--text-strong);
-  font-size: 18px;
+  color: var(--stage-color, var(--text-strong));
+  font-size: 15px;
+  line-height: 1.25;
 }
 
 .kanban-column__header strong {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   border-radius: 999px;
-  color: var(--primary);
-  background: rgba(0, 74, 232, 0.08);
-  border: 1px solid rgba(0, 74, 232, 0.14);
+  color: var(--stage-color, var(--primary));
+  background: var(--stage-bg, rgba(0, 74, 232, 0.08));
+  border: 1px solid var(--stage-border, rgba(0, 74, 232, 0.14));
 }
 
 .column-label {
   display: block;
   margin-bottom: 6px;
   color: var(--muted);
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -262,23 +280,23 @@ const resolveActionIcon = (actionLabel) => {
 
 .kanban-column__body {
   display: grid;
-  gap: 12px;
+  gap: 9px;
   align-content: start;
-  padding: 14px;
+  padding: 10px;
 }
 
 .kanban-card {
   display: grid;
-  gap: 12px;
+  gap: 9px;
   width: 100%;
-  min-height: 150px;
-  padding: 16px;
-  border: 1px solid var(--stroke-soft);
+  min-height: auto;
+  padding: 12px;
+  border: 1px solid #e6edf6;
   border-radius: 8px;
   text-align: left;
   color: var(--text);
   background: #ffffff;
-  box-shadow: 0 12px 24px rgba(5, 8, 102, 0.08);
+  box-shadow: 0 6px 14px rgba(5, 8, 102, 0.05);
   transition:
     transform 0.2s ease,
     box-shadow 0.2s ease,
@@ -286,13 +304,12 @@ const resolveActionIcon = (actionLabel) => {
 }
 
 .kanban-card:hover {
-  transform: translateY(-2px);
-  border-color: rgba(0, 74, 232, 0.24);
-  box-shadow: 0 18px 30px rgba(5, 8, 102, 0.12);
+  transform: translateY(-1px);
+  border-color: rgba(0, 74, 232, 0.2);
+  box-shadow: 0 10px 18px rgba(5, 8, 102, 0.08);
 }
 
 .kanban-card__main,
-.kanban-card__link,
 .detail-link {
   padding: 0;
   border: none;
@@ -303,44 +320,55 @@ const resolveActionIcon = (actionLabel) => {
 
 .kanban-card__main {
   display: grid;
-  gap: 12px;
+  gap: 10px;
 }
 
 .kanban-card__main:focus-visible,
-.kanban-card__link:focus-visible,
 .detail-link:focus-visible {
   outline: none;
 }
 
-.kanban-card__main:focus-visible strong,
-.kanban-card__link:focus-visible,
+.kanban-card__main:focus-visible .kanban-card__title,
 .detail-link:focus-visible {
   color: var(--primary);
 }
 
-.kanban-card strong {
+.kanban-card__title {
   display: block;
   color: var(--text-strong);
-  font-size: 18px;
-  line-height: 1.35;
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.28;
 }
 
-.kanban-card__meta {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
+.kanban-card__fields {
+  display: grid;
+  gap: 7px;
+}
+
+.kanban-card__field {
+  display: grid;
+  gap: 2px;
+}
+
+.kanban-card__field span {
   color: var(--muted);
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  line-height: 1.2;
+  text-transform: uppercase;
 }
 
-.kanban-card__link:hover,
+.kanban-card__field strong {
+  color: #15204a;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
 .detail-link:hover {
   color: var(--primary);
-}
-
-.kanban-card__meta .material-icons {
-  font-size: 18px;
 }
 
 .empty-state {
