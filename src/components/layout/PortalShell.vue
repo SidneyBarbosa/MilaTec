@@ -136,10 +136,18 @@ const onSignOut = () => {
 }
 
 .sidebar {
+  position: sticky;
+  top: 0;
+  align-self: start;
   display: grid;
-  grid-template-rows: auto 1fr auto;
+  grid-template-rows: auto minmax(0, 1fr) auto;
   gap: 16px;
+  height: 100vh;
+  height: 100dvh;
+  max-height: 100vh;
+  max-height: 100dvh;
   padding: 16px 12px;
+  overflow: hidden;
   background: linear-gradient(180deg, #050866 0%, #08118b 100%);
   color: #ffffff;
   border-right: 1px solid rgba(255, 255, 255, 0.06);
@@ -181,7 +189,10 @@ const onSignOut = () => {
   display: grid;
   align-content: start;
   gap: 22px;
+  min-height: 0;
+  overflow-y: auto;
   padding: 4px 2px;
+  scrollbar-width: thin;
 }
 
 .sidebar__group {
@@ -416,8 +427,13 @@ const onSignOut = () => {
   }
 
   .sidebar {
+    position: static;
+    align-self: stretch;
     grid-template-rows: auto auto auto;
+    height: auto;
+    max-height: none;
     padding: 14px 14px 12px;
+    overflow: visible;
     border-right: none;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   }
@@ -426,6 +442,7 @@ const onSignOut = () => {
     display: flex;
     gap: 16px;
     overflow-x: auto;
+    overflow-y: visible;
     padding-bottom: 6px;
   }
 
