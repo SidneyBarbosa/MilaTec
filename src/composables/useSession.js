@@ -13,7 +13,7 @@ const profileDirectory = Object.freeze({
     companyId: 'emp-grupo-horizonte',
     defaultEmail: 'joao@grupohorizonte.com',
     initials: 'JM',
-    scopeLabel: 'Consulta restrita a empresa, obras, orçamentos, projetos, entregas, instalações e anexos',
+    scopeLabel: 'Consulta somente leitura restrita a empresa, obras, projetos, entregas e anexos',
   }),
   admin: Object.freeze({
     role: 'admin',

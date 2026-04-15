@@ -482,8 +482,18 @@ function groupAttachmentsByEntity(attachments) {
   }, {});
 }
 
-function findAttachmentByCategory(attachments, category) {
-  return attachments.find((attachment) => attachment.category === category) || null;
+function normalizeText(value) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+}
+
+function findAttachmentByCategory(attachments, categories) {
+  const categoryList = Array.isArray(categories) ? categories : [categories];
+  const normalizedCategories = categoryList.map(normalizeText);
+
+  return attachments.find((attachment) => normalizedCategories.includes(normalizeText(attachment.category))) || null;
 }
 
 function resolveCompanyId(companyId) {
@@ -574,9 +584,10 @@ function buildClientPortalData(companyId = DEFAULT_COMPANY_ID) {
       budgetValue: budget?.value || project.totalValue,
       budgetStatus: budget?.status || 'Status não informado',
       attachments: projectAttachments,
+      preProjectAttachment: findAttachmentByCategory(projectAttachments, ['Pré-projeto', 'Pre-projeto']),
       executiveAttachment: findAttachmentByCategory(projectAttachments, 'Projeto executivo'),
-      approvalAttachment: findAttachmentByCategory(projectAttachments, 'Projeto aprovação'),
-      registrationAttachment: findAttachmentByCategory(projectAttachments, 'Registro de obra'),
+      approvalAttachment: findAttachmentByCategory(projectAttachments, ['Projeto aprovação', 'Projeto para aprovação']),
+      registrationAttachment: findAttachmentByCategory(projectAttachments, ['Registro de obra', 'Fotos da obra']),
     };
   });
 
@@ -597,9 +608,11 @@ function buildClientPortalData(companyId = DEFAULT_COMPANY_ID) {
       tone: hasDate ? delivery.tone : 'warning',
       invoiceDate: delivery.invoiceDate || 'A faturar',
       value: delivery.value || linkedProject?.totalValue || 'Valor não informado',
+      deliveryAddress: delivery.deliveryAddress || linkedWork?.city || 'Endereço não informado',
       attachments: deliveryAttachments,
       invoiceAttachment: findAttachmentByCategory(deliveryAttachments, 'Nota fiscal'),
       packingListAttachment: findAttachmentByCategory(deliveryAttachments, 'Romaneio'),
+      purchaseOrderAttachment: findAttachmentByCategory(deliveryAttachments, 'Pedido de compra'),
     };
   });
 
@@ -648,17 +661,21 @@ function buildClientPortalData(companyId = DEFAULT_COMPANY_ID) {
         budgetType: project.budgetType,
         stage: project.stage,
         quantity: project.quantity,
+        unitValue: project.unitValue,
         totalValue: project.totalValue,
+        registrationAttachment: project.registrationAttachment,
       })),
       linkedDeliveries: linkedDeliveries.map((delivery) => ({
         id: delivery.id,
         name: delivery.name,
         displayDate: delivery.displayDate,
         invoiceDate: delivery.invoiceDate,
+        deliveryAddress: delivery.deliveryAddress,
         quantity: delivery.quantity,
         value: delivery.value,
         status: delivery.status,
         stage: delivery.stage,
+        purchaseOrderAttachment: delivery.purchaseOrderAttachment,
       })),
       attachments: linkedAttachments,
     };
@@ -754,6 +771,136 @@ function buildClientPortalData(companyId = DEFAULT_COMPANY_ID) {
   };
 }
 
+function resolveProjectCompany(project) {
+  const budget = orcamentosById[project?.orcamentoId];
+  const work = obrasById[project?.obraId];
+  return empresasById[budget?.empresaId] || empresasById[work?.empresaId] || null;
+}
+
+function resolveAttachmentCompany(attachment) {
+  if (attachment.entityType === 'orcamento') {
+    return empresasById[orcamentosById[attachment.entityId]?.empresaId] || null;
+  }
+
+  if (attachment.entityType === 'projeto') {
+    return resolveProjectCompany(projetosById[attachment.entityId]);
+  }
+
+  if (attachment.entityType === 'entrega') {
+    const delivery = entregasById[attachment.entityId];
+    return resolveProjectCompany(projetosById[delivery?.projetoId]);
+  }
+
+  return null;
+}
+
+function buildAdminPortalData() {
+  const customers = empresas.map((empresa) => {
+    const primaryContact = resolveContact(empresa.id);
+
+    return {
+      company: empresa.name,
+      cityState: `${empresa.city}, ${empresa.state}`,
+      primaryContact: primaryContact?.name || 'Contato não informado',
+      email: primaryContact?.email || 'E-mail não informado',
+      scope: 'Empresas, contatos, obras, projetos, entregas, anexos e relacionamentos',
+    };
+  });
+
+  const adminWorks = obras.map((work) => ({
+    client: empresasById[work.empresaId]?.name || 'Empresa não vinculada',
+    name: work.name,
+    city: work.city,
+    stage: work.stage,
+  }));
+
+  const adminProjects = projetos.map((project) => {
+    const company = resolveProjectCompany(project);
+    const work = obrasById[project.obraId];
+    const budget = orcamentosById[project.orcamentoId];
+
+    return {
+      client: company?.name || 'Empresa não vinculada',
+      name: project.name,
+      location: project.location,
+      type: project.type,
+      stage: project.stage,
+      quantity: project.quantity,
+      unitValue: project.unitValue,
+      totalValue: project.totalValue,
+      workName: work?.name || 'Obra não vinculada',
+      budgetType: budget?.budgetType || 'Tipo não informado',
+    };
+  });
+
+  const adminDeliveries = entregas.map((delivery) => {
+    const project = projetosById[delivery.projetoId];
+    const company = resolveProjectCompany(project);
+    const work = project ? obrasById[project.obraId] : null;
+
+    return {
+      client: company?.name || 'Empresa não vinculada',
+      name: delivery.name,
+      date: delivery.date || 'Sem data',
+      invoiceDate: delivery.invoiceDate || 'A faturar',
+      quantity: delivery.quantity,
+      status: delivery.status,
+      stage: delivery.stage,
+      value: delivery.value,
+      tone: delivery.tone,
+      workName: work?.name || 'Obra não vinculada',
+    };
+  });
+
+  const adminAttachments = anexos.map((attachment) => {
+    const company = resolveAttachmentCompany(attachment);
+    const linkedInfo = resolveAttachmentLink(attachment);
+
+    return {
+      ...attachment,
+      ...linkedInfo,
+      client: company?.name || 'Empresa não vinculada',
+      visibility: 'Cliente e administração',
+      actionLabel: attachment.actionLabel === 'Visualizar' ? 'Abrir' : attachment.actionLabel,
+    };
+  });
+
+  return {
+    ...adminPortalData,
+    summaryCards: [
+      {
+        label: 'Empresas ativas',
+        value: String(empresas.length),
+        detail: formatCount(empresas.length, 'empresa cadastrada', 'empresas cadastradas'),
+        accent: '#050866',
+      },
+      {
+        label: 'Obras monitoradas',
+        value: String(obras.length),
+        detail: 'Visão completa para administração',
+        accent: '#004AE8',
+      },
+      {
+        label: 'Entregas publicadas',
+        value: String(entregas.length),
+        detail: 'Datas, status e faturamento centralizados',
+        accent: '#00A34A',
+      },
+      {
+        label: 'Anexos liberados',
+        value: String(anexos.length),
+        detail: 'Arquivos com vínculo e referência',
+        accent: '#004AE8',
+      },
+    ],
+    customers,
+    works: adminWorks,
+    projects: adminProjects,
+    deliveries: adminDeliveries,
+    attachments: adminAttachments,
+  };
+}
+
 function clone(value) {
   return JSON.parse(JSON.stringify(value));
 }
@@ -763,7 +910,7 @@ export function getClientPortalData(companyId = DEFAULT_COMPANY_ID) {
 }
 
 export function getAdminPortalData() {
-  return clone(adminPortalData);
+  return clone(buildAdminPortalData());
 }
 
 

@@ -30,12 +30,8 @@
                   <strong>{{ project.workName }}</strong>
                 </span>
                 <span class="kanban-card__field">
-                  <span>{{ project.product ? 'Produto' : 'Tipo de orçamento' }}</span>
-                  <strong>{{ project.product || project.budgetType }}</strong>
-                </span>
-                <span class="kanban-card__field">
-                  <span>Quantidade</span>
-                  <strong>{{ project.quantity }}</strong>
+                  <span>Tipo de orçamento</span>
+                  <strong>{{ project.budgetType }}</strong>
                 </span>
               </span>
 
@@ -58,74 +54,131 @@
       @click.self="closeDetail"
     >
       <section
-        class="detail-modal"
+        class="detail-modal project-record-modal"
         role="dialog"
         aria-modal="true"
         :aria-label="`Detalhes do projeto ${selectedProject.name}`"
       >
-        <header class="detail-modal__header">
+        <header class="project-record-modal__header">
           <div>
-            <p class="pill">Detalhe do projeto</p>
             <h3>{{ selectedProject.name }}</h3>
           </div>
-          <button class="modal-close" type="button" aria-label="Fechar detalhe" @click="closeDetail">
-            <span class="material-icons" aria-hidden="true">close</span>
-          </button>
-        </header>
 
-        <div class="detail-grid">
-          <div>
-            <span>Obra vinculada</span>
-            <button class="detail-link" type="button" @click="goToWork(selectedProject.obraId)">
-              {{ selectedProject.workName }}
+          <div class="project-record-modal__actions">
+            <button class="record-icon-button" type="button" aria-label="Imprimir detalhe">
+              <span class="material-icons" aria-hidden="true">print</span>
+            </button>
+            <button class="record-icon-button" type="button" aria-label="Copiar link">
+              <span class="material-icons" aria-hidden="true">link</span>
+            </button>
+            <button class="record-icon-button" type="button" aria-label="Fechar detalhe" @click="closeDetail">
+              <span class="material-icons" aria-hidden="true">close</span>
             </button>
           </div>
-          <div>
-            <span>Produto</span>
-            <strong>{{ selectedProject.product }}</strong>
-          </div>
-          <div>
-            <span>Tipo de projeto</span>
-            <strong>{{ selectedProject.type }}</strong>
-          </div>
-          <div>
-            <span>Etapa</span>
-            <strong>{{ selectedProject.stage }}</strong>
-          </div>
-          <div>
-            <span>Quantidade</span>
-            <strong>{{ selectedProject.quantity }}</strong>
-          </div>
-          <div>
-            <span>Valor unitário</span>
-            <strong>{{ selectedProject.unitValue }}</strong>
-          </div>
-          <div>
-            <span>Valor total</span>
-            <strong>{{ selectedProject.totalValue }}</strong>
-          </div>
-        </div>
+        </header>
 
-        <section class="detail-section">
-          <h4>Anexos</h4>
-          <div class="document-list">
-            <div v-for="item in projectAttachmentRows(selectedProject)" :key="item.label" class="document-item">
-              <span>{{ item.label }}</span>
-              <a
-                v-if="item.attachment"
-                :href="item.attachment.href"
-                class="attachment-action"
-                :aria-label="item.attachment.actionLabel"
-              >
-                <span class="material-icons" aria-hidden="true">
-                  {{ resolveActionIcon(item.attachment.actionLabel) }}
+        <nav class="project-record-tabs" aria-label="Seções do projeto">
+          <button class="project-record-tabs__item project-record-tabs__item--active" type="button">
+            Documentação
+          </button>
+        </nav>
+
+        <div class="project-record-content">
+          <section class="project-record-section">
+            <div class="project-field-grid">
+              <div class="project-field">
+                <span>Projeto</span>
+                <strong>{{ selectedProject.name }}</strong>
+              </div>
+              <div class="project-field">
+                <span>Cidade da obra (orçamento)</span>
+                <button class="project-field-link" type="button" @click="goToWork(selectedProject.obraId)">
+                  {{ displayValue(selectedProject.workCity) }}
+                </button>
+              </div>
+              <div class="project-field">
+                <span>Produto</span>
+                <span class="record-chip record-chip--green">{{ displayValue(selectedProject.product) }}</span>
+              </div>
+              <div class="project-field">
+                <span>Tipo de Projeto</span>
+                <span class="record-chip record-chip--green">{{ displayValue(selectedProject.type) }}</span>
+              </div>
+              <div class="project-field">
+                <span>Etapa do Projeto</span>
+                <span class="record-chip record-chip--stage" :style="stageStyle(selectedProject.stage, 'project')">
+                  {{ selectedProject.stage }}
                 </span>
-                <span>{{ item.attachment.name }}</span>
-              </a>
-              <strong v-else>Não liberado</strong>
+              </div>
             </div>
-          </div>
-        </section>
+
+            <div class="budget-record-card">
+              <span>Orçamentos</span>
+              <strong>{{ selectedProject.budgetName }}</strong>
+              <div class="chip-list">
+                <span class="record-chip record-chip--danger">{{ selectedProject.budgetStatus }}</span>
+                <span class="record-chip record-chip--muted">
+                  {{ portalCompany.primaryContact }}
+                </span>
+              </div>
+            </div>
+
+            <div class="project-value-grid">
+              <div>
+                <span>Quantidade</span>
+                <strong>{{ displayValue(selectedProject.quantity) }}</strong>
+              </div>
+              <div>
+                <span>Valor da Unidade (Orçamento)</span>
+                <strong>{{ displayValue(selectedProject.unitValue) }}</strong>
+              </div>
+              <div>
+                <span>Valor Total do Projeto</span>
+                <strong>{{ displayValue(selectedProject.totalValue) }}</strong>
+              </div>
+            </div>
+          </section>
+
+          <section class="project-record-section">
+            <h4>Documentação</h4>
+
+            <div class="project-document-grid">
+              <div v-for="item in projectDocumentRows(selectedProject)" :key="item.label" class="project-document-slot">
+                <span>{{ item.label }}</span>
+                <a
+                  v-if="item.attachment"
+                  :href="item.attachment.href"
+                  class="attachment-action"
+                  :aria-label="item.attachment.actionLabel"
+                >
+                  <span class="material-icons" aria-hidden="true">
+                    {{ resolveActionIcon(item.attachment.actionLabel) }}
+                  </span>
+                  <span>{{ item.attachment.name }}</span>
+                </a>
+                <strong v-else>Sem anexos</strong>
+              </div>
+            </div>
+
+            <div class="project-registry">
+              <span>Registro da Obra</span>
+              <div class="project-registry__box">
+                <a
+                  v-if="selectedProject.registrationAttachment"
+                  :href="selectedProject.registrationAttachment.href"
+                  class="attachment-action"
+                  :aria-label="selectedProject.registrationAttachment.actionLabel"
+                >
+                  <span class="material-icons" aria-hidden="true">
+                    {{ resolveActionIcon(selectedProject.registrationAttachment.actionLabel) }}
+                  </span>
+                  <span>{{ selectedProject.registrationAttachment.name }}</span>
+                </a>
+                <strong v-else>Sem anexos</strong>
+              </div>
+            </div>
+          </section>
+        </div>
       </section>
     </div>
   </div>
@@ -144,6 +197,7 @@ const selectedProjectId = ref('');
 const columnLimits = ref({});
 const kanbanPageSize = 6;
 
+const portalCompany = computed(() => portalData.value.company);
 const projects = computed(() => portalData.value.projects);
 const selectedProject = computed(
   () => projects.value.find((project) => project.id === selectedProjectId.value) || null,
@@ -194,18 +248,20 @@ const showMore = (stage) => {
   };
 };
 
-const projectAttachmentRows = (project) => [
+const displayValue = (value) => value || '-';
+
+const projectDocumentRows = (project) => [
   {
-    label: 'Projeto executivo',
-    attachment: project.executiveAttachment,
+    label: 'Pré-projeto',
+    attachment: project.preProjectAttachment,
   },
   {
-    label: 'Projeto aprovação',
+    label: 'Projeto para aprovação',
     attachment: project.approvalAttachment,
   },
   {
-    label: 'Registro de obra',
-    attachment: project.registrationAttachment,
+    label: 'Projeto executivo',
+    attachment: project.executiveAttachment,
   },
 ];
 
@@ -399,130 +455,277 @@ const resolveActionIcon = (actionLabel) => {
   position: fixed;
   inset: 0;
   z-index: 50;
-  display: grid;
-  place-items: center;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  overflow: auto;
   padding: 24px;
-  background: rgba(5, 8, 102, 0.48);
+  background: rgba(18, 23, 42, 0.38);
 }
 
 .detail-modal {
   display: grid;
-  gap: 18px;
-  width: min(860px, 100%);
-  max-height: min(820px, calc(100vh - 48px));
+  width: min(1100px, 100%);
+  max-height: calc(100vh - 48px);
   overflow: auto;
-  padding: 22px;
+  padding: 0;
   border-radius: 8px;
-  background: var(--card);
+  background: #ffffff;
   box-shadow: var(--shadow-lg);
 }
 
-.detail-modal__header {
+.project-record-modal__header {
+  position: sticky;
+  top: 0;
+  z-index: 2;
   display: flex;
   justify-content: space-between;
   gap: 16px;
   align-items: flex-start;
+  padding: 32px 32px 24px;
+  border-bottom: 1px solid #e7ecf3;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(12px);
 }
 
-.detail-modal__header h3 {
-  margin-top: 8px;
-  color: var(--text-strong);
-  font-size: 24px;
+.project-record-modal__header h3 {
+  color: #202332;
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1.22;
+  text-transform: uppercase;
 }
 
-.modal-close {
+.project-record-modal__actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.record-icon-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
-  border: 1px solid var(--stroke-soft);
+  width: 34px;
+  height: 34px;
+  border: 1px solid transparent;
   border-radius: 8px;
-  color: var(--text-strong);
-  background: #f7faff;
+  color: #353b4c;
+  background: transparent;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.record-icon-button:hover,
+.record-icon-button:focus-visible {
+  border-color: #dfe5ee;
+  color: var(--primary);
+  background: #f5f7fb;
+  outline: none;
+}
+
+.record-icon-button .material-icons {
+  font-size: 19px;
+}
+
+.project-record-tabs {
+  display: flex;
+  gap: 22px;
+  padding: 0 32px;
+  border-bottom: 1px solid #e7ecf3;
+  background: #ffffff;
+}
+
+.project-record-tabs__item {
+  min-height: 44px;
+  padding: 0;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: #111827;
+  background: transparent;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.project-record-tabs__item--active {
+  border-bottom-color: #111827;
+}
+
+.project-record-content {
+  display: grid;
+  gap: 26px;
+  padding: 18px 16px 28px;
+  background: #ffffff;
+}
+
+.project-record-section {
+  display: grid;
+  gap: 18px;
+  padding: 18px;
+  border: 1px solid #edf1f7;
+  border-radius: 8px;
+  background: #f5f7fb;
+}
+
+.project-record-section h4 {
+  color: #202332;
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.project-field-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(170px, 1fr));
+  gap: 18px 22px;
+}
+
+.project-field,
+.budget-record-card,
+.project-value-grid > div,
+.project-document-slot,
+.project-registry {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  min-width: 0;
+}
+
+.project-field > span:first-child,
+.budget-record-card > span,
+.project-value-grid span,
+.project-document-slot > span,
+.project-registry > span {
+  color: #202332;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.project-field strong,
+.budget-record-card strong,
+.project-value-grid strong {
+  color: #202332;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.project-field-link {
+  width: max-content;
+  max-width: 100%;
+  padding: 0 10px;
+  min-height: 24px;
+  border: none;
+  border-radius: 999px;
+  color: #4b5563;
+  background: #eef2f7;
+  font-size: 12px;
+  font-weight: 600;
   cursor: pointer;
 }
 
-.modal-close:hover,
-.modal-close:focus-visible {
-  border-color: rgba(0, 74, 232, 0.24);
+.project-field-link:hover,
+.project-field-link:focus-visible {
   color: var(--primary);
   outline: none;
 }
 
-.detail-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-  gap: 12px;
+.chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
 }
 
-.detail-grid div,
-.document-item {
-  min-height: 92px;
-  padding: 14px;
-  border: 1px solid var(--stroke-soft);
+.record-chip {
+  display: inline-flex;
+  align-items: center;
+  width: max-content;
+  min-height: 22px;
+  padding: 0 9px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  color: #1f2937;
+  background: #eef2f7;
+}
+
+.record-chip--green {
+  color: #0d5f35;
+  background: rgba(0, 163, 74, 0.18);
+}
+
+.record-chip--muted {
+  color: #4b5563;
+  background: #eef2f7;
+}
+
+.record-chip--danger {
+  color: #b4233c;
+  background: rgba(194, 65, 93, 0.12);
+}
+
+.record-chip--stage {
+  color: var(--stage-color, #1450c8);
+  border: 1px solid var(--stage-border, rgba(20, 80, 200, 0.12));
+  background: var(--stage-bg, rgba(20, 80, 200, 0.08));
+}
+
+.budget-record-card {
+  min-height: 68px;
+  padding: 12px;
+  border: 1px solid #dfe5ee;
   border-radius: 8px;
-  background: #f7faff;
+  background: #ffffff;
 }
 
-.detail-grid span,
-.detail-grid strong,
-.document-item span,
-.document-item strong {
-  display: block;
-}
-
-.detail-grid span,
-.document-item > span {
-  color: var(--muted);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-
-.detail-grid strong,
-.document-item strong {
-  margin-top: 8px;
-  color: var(--text-strong);
-  font-size: 16px;
-  line-height: 1.4;
-}
-
-.detail-link {
-  display: block;
-  margin-top: 8px;
-  color: var(--text-strong);
-  font-size: 16px;
-  font-weight: 700;
-  line-height: 1.4;
-}
-
-.detail-section {
+.project-value-grid {
   display: grid;
-  gap: 12px;
+  grid-template-columns: repeat(3, minmax(170px, 1fr));
+  gap: 18px 22px;
 }
 
-.detail-section h4 {
-  margin: 0;
-  color: var(--text-strong);
-  font-size: 16px;
-}
-
-.document-list {
+.project-document-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(3, minmax(200px, 1fr));
+  gap: 18px 26px;
 }
 
-.document-item {
+.project-document-slot {
+  min-height: 78px;
+}
+
+.project-document-slot strong,
+.project-registry__box strong {
   display: grid;
-  gap: 10px;
+  place-items: center;
+  min-height: 40px;
+  border: 1px solid #dfe5ee;
+  border-radius: 4px;
+  color: #a0a7b4;
+  background: rgba(255, 255, 255, 0.42);
+  font-size: 12px;
+  font-weight: 500;
 }
 
-.document-item .attachment-action {
+.project-document-slot .attachment-action,
+.project-registry__box .attachment-action {
   justify-content: flex-start;
   border-radius: 8px;
+  background: #ffffff;
+}
+
+.project-registry__box {
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  min-height: 230px;
+  padding: 18px;
+  border: 1px solid #dfe5ee;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.42);
 }
 
 @media (max-width: 720px) {
@@ -531,12 +734,36 @@ const resolveActionIcon = (actionLabel) => {
   }
 
   .modal-backdrop {
-    align-items: stretch;
-    padding: 12px;
+    padding: 0;
   }
 
   .detail-modal {
-    max-height: calc(100vh - 24px);
+    width: 100%;
+    max-height: 100vh;
+    min-height: 100vh;
+    border-radius: 0;
+  }
+
+  .project-record-modal__header {
+    padding: 22px 16px 16px;
+  }
+
+  .project-record-modal__header h3 {
+    font-size: 22px;
+  }
+
+  .project-record-tabs {
+    padding: 0 16px;
+  }
+
+  .project-record-content {
+    padding: 14px 10px 22px;
+  }
+
+  .project-field-grid,
+  .project-value-grid,
+  .project-document-grid {
+    grid-template-columns: 1fr;
   }
 }
 </style>

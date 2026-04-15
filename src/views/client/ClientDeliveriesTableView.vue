@@ -78,8 +78,8 @@
           <span>Data de faturamento</span>
           <span>Etapa</span>
           <span>Valor</span>
-          <span>Obra vinculada</span>
           <span>Anexo (nota fiscal)</span>
+          <span>Obra vinculada</span>
         </div>
 
         <div class="table__body">
@@ -103,11 +103,6 @@
               </span>
             </span>
             <span class="table__cell">{{ delivery.value }}</span>
-            <span class="table__cell table__cell--linked">
-              <button class="inline-link" type="button" @click.stop="goToWork(delivery.workId)">
-                {{ delivery.workName }}
-              </button>
-            </span>
             <span class="table__cell">
               <a
                 v-if="delivery.invoiceAttachment"
@@ -123,6 +118,11 @@
                 <span class="material-icons" aria-hidden="true">hourglass_empty</span>
                 <span>NF pendente</span>
               </span>
+            </span>
+            <span class="table__cell table__cell--linked">
+              <button class="inline-link" type="button" @click.stop="goToWork(delivery.workId)">
+                {{ delivery.workName }}
+              </button>
             </span>
           </div>
         </div>
@@ -167,7 +167,7 @@
             <strong>{{ selectedDelivery.name }}</strong>
           </div>
           <div>
-            <span>Obra</span>
+            <span>Obra associada</span>
             <button class="detail-link" type="button" @click="goToWork(selectedDelivery.workId)">
               {{ selectedDelivery.workName }}
             </button>
@@ -179,6 +179,22 @@
           <div>
             <span>Data entrega</span>
             <strong>{{ selectedDelivery.displayDate }}</strong>
+          </div>
+          <div>
+            <span>Quantidade</span>
+            <strong>{{ selectedDelivery.quantity }}</strong>
+          </div>
+          <div>
+            <span>Etapa da entrega</span>
+            <strong>{{ selectedDelivery.stage }}</strong>
+          </div>
+          <div>
+            <span>Data faturamento</span>
+            <strong>{{ selectedDelivery.invoiceDate }}</strong>
+          </div>
+          <div>
+            <span>Endereço de entrega</span>
+            <strong>{{ selectedDelivery.deliveryAddress }}</strong>
           </div>
           <div>
             <span>Valor</span>
@@ -328,6 +344,10 @@ const goToWork = (workId) => {
 };
 
 const deliveryDocumentRows = (delivery) => [
+  {
+    label: 'Pedido de Compra (anexo)',
+    attachment: delivery.purchaseOrderAttachment,
+  },
   {
     label: 'Romaneio (PDF)',
     attachment: delivery.packingListAttachment,

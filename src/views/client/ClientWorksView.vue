@@ -34,10 +34,6 @@
                 <span>Cidade</span>
                 <strong>{{ work.city }}</strong>
               </span>
-              <span class="kanban-card__field">
-                <span>Data relacionada</span>
-                <strong>{{ work.linkedDeliveries[0]?.displayDate || 'Sem data' }}</strong>
-              </span>
             </span>
           </button>
 
@@ -184,10 +180,11 @@
             <div class="record-table">
               <div class="record-table__head">
                 <span>Projeto</span>
+                <span>Tipo orçamento</span>
                 <span>Produto</span>
                 <span>Etapa</span>
                 <span>Quantidade</span>
-                <span>Valor</span>
+                <span>Registro</span>
               </div>
               <button
                 v-for="project in selectedWork.linkedProjects"
@@ -197,10 +194,11 @@
                 @click="goToProject(project.id)"
               >
                 <strong>{{ project.name }}</strong>
+                <span>{{ displayValue(project.budgetType) }}</span>
                 <span>{{ displayValue(project.product) }}</span>
                 <span>{{ displayValue(project.stage) }}</span>
                 <span>{{ displayValue(project.quantity) }}</span>
-                <span>{{ displayValue(project.totalValue) }}</span>
+                <span>{{ project.registrationAttachment ? 'Liberado' : 'Sem fotos' }}</span>
               </button>
               <p v-if="!selectedWork.linkedProjects.length" class="record-empty">Sem projetos vinculados.</p>
             </div>
@@ -212,10 +210,11 @@
             <div class="record-table">
               <div class="record-table__head record-table__head--deliveries">
                 <span>Entrega</span>
-                <span>Data</span>
+                <span>Endereço</span>
+                <span>Etapa</span>
+                <span>Data faturamento</span>
                 <span>Quantidade</span>
                 <span>Valor</span>
-                <span>Status</span>
               </div>
               <button
                 v-for="delivery in selectedWork.linkedDeliveries"
@@ -225,10 +224,11 @@
                 @click="goToDelivery(delivery.id)"
               >
                 <strong>{{ delivery.name }}</strong>
-                <span>{{ displayValue(delivery.displayDate) }}</span>
+                <span>{{ displayValue(delivery.deliveryAddress) }}</span>
+                <span>{{ displayValue(delivery.stage) }}</span>
+                <span>{{ displayValue(delivery.invoiceDate) }}</span>
                 <span>{{ displayValue(delivery.quantity) }}</span>
                 <span>{{ displayValue(delivery.value) }}</span>
-                <span>{{ displayValue(delivery.status) }}</span>
               </button>
               <p v-if="!selectedWork.linkedDeliveries.length" class="record-empty">Sem entregas vinculadas.</p>
             </div>
@@ -386,19 +386,22 @@ const findWorkAttachment = (work, categories) =>
 const workAttachmentSlots = (work) => [
   {
     label: 'Proposta Comercial (anexo)',
-    attachment: findWorkAttachment(work, ['Orçamento']),
+    attachment: findWorkAttachment(work, ['Proposta comercial', 'Orçamento']),
   },
   {
     label: 'Memorial de Cálculo',
-    attachment: findWorkAttachment(work, ['Projeto executivo']),
+    attachment: findWorkAttachment(work, ['Memorial de cálculo', 'Projeto executivo']),
   },
   {
     label: 'ART',
-    attachment: findWorkAttachment(work, ['Registro de obra']),
+    attachment: findWorkAttachment(work, ['ART', 'Registro de obra']),
   },
   {
-    label: 'Contrato (anexo)',
-    attachment: findWorkAttachment(work, ['Projeto aprovação']),
+    label: 'Pedido de Compra (anexo)',
+    attachment:
+      findWorkAttachment(work, ['Pedido de compra']) ||
+      (work?.linkedDeliveries || []).find((delivery) => delivery.purchaseOrderAttachment)?.purchaseOrderAttachment ||
+      null,
   },
 ];
 
@@ -860,12 +863,13 @@ const resolveActionIcon = (actionLabel) => {
 .record-table__row {
   display: grid;
   grid-template-columns:
-    minmax(180px, 1.15fr)
-    minmax(180px, 1fr)
-    minmax(150px, 0.85fr)
-    minmax(130px, 0.7fr)
-    minmax(130px, 0.75fr);
-  min-width: 760px;
+    minmax(170px, 1.1fr)
+    minmax(150px, 0.88fr)
+    minmax(160px, 1fr)
+    minmax(150px, 0.9fr)
+    minmax(120px, 0.72fr)
+    minmax(110px, 0.68fr);
+  min-width: 860px;
   align-items: center;
   gap: 12px;
 }
@@ -873,11 +877,12 @@ const resolveActionIcon = (actionLabel) => {
 .record-table__head--deliveries,
 .record-table__row--deliveries {
   grid-template-columns:
-    minmax(190px, 1.2fr)
-    minmax(130px, 0.75fr)
-    minmax(130px, 0.75fr)
-    minmax(130px, 0.75fr)
-    minmax(130px, 0.75fr);
+    minmax(180px, 1.05fr)
+    minmax(220px, 1.2fr)
+    minmax(150px, 0.86fr)
+    minmax(140px, 0.8fr)
+    minmax(120px, 0.72fr)
+    minmax(120px, 0.72fr);
 }
 
 .record-table__head {

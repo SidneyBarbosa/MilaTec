@@ -86,7 +86,7 @@ const menuGroupsByRole = {
       items: [
         { label: 'Obras', to: '/cliente/obras', icon: 'construction' },
         { label: 'Projetos', to: '/cliente/projetos', icon: 'account_tree' },
-        { label: 'Entregas', to: '/cliente/entregas', icon: 'local_shipping' },
+        { label: 'Programação de Entregas', to: '/cliente/entregas', icon: 'event_note' },
       ],
     },
     {

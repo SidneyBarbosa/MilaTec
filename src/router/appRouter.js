@@ -57,7 +57,7 @@ const routes = [
     path: '/cliente/entregas',
     name: 'client-deliveries',
     component: ClientDeliveriesView,
-    meta: { requiresAuth: true, roles: ['client'], title: 'Entregas' },
+    meta: { requiresAuth: true, roles: ['client'], title: 'Programação de Entregas' },
   },
   {
     path: '/cliente/anexos',

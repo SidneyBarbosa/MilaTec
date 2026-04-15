@@ -166,10 +166,17 @@ const handleDownload = (event, attachment) => {
 const categoryIcon = (category) => {
   const iconByCategory = {
     Orçamento: 'request_quote',
+    'Proposta comercial': 'request_quote',
     Projeto: 'architecture',
+    'Pré-projeto': 'draw',
     'Projeto executivo': 'architecture',
     'Projeto aprovação': 'approval',
+    'Projeto para aprovação': 'approval',
     'Registro de obra': 'assignment_turned_in',
+    'Fotos da obra': 'photo_camera',
+    'Memorial de cálculo': 'functions',
+    ART: 'verified',
+    'Pedido de compra': 'shopping_cart',
     Cronograma: 'event_note',
     Logística: 'local_shipping',
     Romaneio: 'inventory_2',
@@ -287,14 +294,18 @@ const categoryClass = (category) => {
 
 .category-chip--nota-fiscal,
 .category-chip--romaneio,
-.category-chip--logistica {
+.category-chip--logistica,
+.category-chip--pedido-de-compra {
   color: #087443;
   border-color: rgba(0, 163, 74, 0.18);
   background: rgba(0, 163, 74, 0.1);
 }
 
 .category-chip--cronograma,
-.category-chip--orcamento {
+.category-chip--orcamento,
+.category-chip--proposta-comercial,
+.category-chip--art,
+.category-chip--memorial-de-calculo {
   color: #a36715;
   border-color: rgba(183, 121, 31, 0.22);
   background: rgba(183, 121, 31, 0.1);
