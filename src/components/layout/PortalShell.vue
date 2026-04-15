@@ -9,17 +9,23 @@
       </RouterLink>
 
       <nav class="sidebar__menu" aria-label="Navegação principal">
-        <RouterLink
-          v-for="item in currentMenu"
-          :key="item.to"
-          :to="item.to"
-          class="sidebar__item"
-          :class="{ 'sidebar__item--active': isActive(item.to) }"
-        >
-          <span class="sidebar__item-glow" />
-          <span class="material-icons sidebar__item-icon" aria-hidden="true">{{ item.icon }}</span>
-          <span class="sidebar__item-label">{{ item.label }}</span>
-        </RouterLink>
+        <section v-for="group in currentMenuGroups" :key="group.label" class="sidebar__group">
+          <p class="sidebar__group-label">{{ group.label }}</p>
+
+          <div class="sidebar__group-items">
+            <RouterLink
+              v-for="item in group.items"
+              :key="item.to"
+              :to="item.to"
+              class="sidebar__item"
+              :class="{ 'sidebar__item--active': isActive(item.to) }"
+            >
+              <span class="sidebar__item-glow" />
+              <span class="material-icons sidebar__item-icon" aria-hidden="true">{{ item.icon }}</span>
+              <span class="sidebar__item-label">{{ item.label }}</span>
+            </RouterLink>
+          </div>
+        </section>
       </nav>
 
       <div class="sidebar__footer">
@@ -39,7 +45,7 @@
     <div class="shell__main">
       <header class="topbar">
         <div class="topbar__copy">
-          <p class="topbar__eyebrow">{{ topbarEyebrow }}</p>
+          <p v-if="topbarEyebrow" class="topbar__eyebrow">{{ topbarEyebrow }}</p>
           <h2 class="topbar__title">{{ currentTitle }}</h2>
         </div>
 
@@ -69,32 +75,53 @@ const route = useRoute();
 const router = useRouter();
 const { currentProfile, sessionRole, resolveDefaultRoute, signOut } = useSession();
 
-const menuByRole = {
+const menuGroupsByRole = {
   client: [
-    { label: 'Início', to: '/cliente/inicio', icon: 'home' },
-    { label: 'Empresa', to: '/cliente/empresa', icon: 'business' },
-    { label: 'Obras', to: '/cliente/obras', icon: 'construction' },
-    { label: 'Meus Orçamentos', to: '/cliente/orcamentos', icon: 'request_quote' },
-    { label: 'Projetos', to: '/cliente/projetos', icon: 'folder' },
-    { label: 'Entregas', to: '/cliente/entregas', icon: 'local_shipping' },
-    { label: 'Instalações', to: '/cliente/instalacoes', icon: 'engineering' },
-    { label: 'Anexos', to: '/cliente/anexos', icon: 'attach_file' },
-    { label: 'Contato / Suporte', to: '/cliente/suporte', icon: 'support_agent' },
+    {
+      label: 'Gestão',
+      items: [{ label: 'Empresa', to: '/cliente/empresa', icon: 'domain' }],
+    },
+    {
+      label: 'Operação',
+      items: [
+        { label: 'Obras', to: '/cliente/obras', icon: 'construction' },
+        { label: 'Projetos', to: '/cliente/projetos', icon: 'account_tree' },
+        { label: 'Entregas', to: '/cliente/entregas', icon: 'local_shipping' },
+      ],
+    },
+    {
+      label: 'Documentos',
+      items: [{ label: 'Anexos', to: '/cliente/anexos', icon: 'folder_open' }],
+    },
   ],
   admin: [
-    { label: 'Clientes', to: '/admin/clientes', icon: 'people' },
-    { label: 'Obras', to: '/admin/obras', icon: 'construction' },
-    { label: 'Projetos', to: '/admin/projetos', icon: 'folder' },
-    { label: 'Entregas', to: '/admin/entregas', icon: 'local_shipping' },
-    { label: 'Anexos', to: '/admin/anexos', icon: 'attach_file' },
-    { label: 'Acessos', to: '/admin/acessos', icon: 'security' },
+    {
+      label: 'Gestão',
+      items: [
+        { label: 'Clientes', to: '/admin/clientes', icon: 'groups' },
+        { label: 'Acessos', to: '/admin/acessos', icon: 'admin_panel_settings' },
+      ],
+    },
+    {
+      label: 'Operação',
+      items: [
+        { label: 'Obras', to: '/admin/obras', icon: 'construction' },
+        { label: 'Projetos', to: '/admin/projetos', icon: 'account_tree' },
+        { label: 'Entregas', to: '/admin/entregas', icon: 'local_shipping' },
+      ],
+    },
+    {
+      label: 'Documentos',
+      items: [{ label: 'Anexos', to: '/admin/anexos', icon: 'folder_open' }],
+    },
   ],
 };
 
 const currentRole = computed(() => sessionRole.value || 'client');
-const currentMenu = computed(() => menuByRole[currentRole.value] || menuByRole.client);
+const currentMenuGroups = computed(() => menuGroupsByRole[currentRole.value] || menuGroupsByRole.client);
+const currentMenu = computed(() => currentMenuGroups.value.flatMap((group) => group.items));
 const currentTitle = computed(() => route.meta?.title || currentMenu.value[0]?.label || 'MilaTec');
-const topbarEyebrow = computed(() => (currentRole.value === 'admin' ? 'ÁREA ADMINISTRATIVA' : 'PORTAL DO CLIENTE'));
+const topbarEyebrow = computed(() => (currentRole.value === 'admin' ? 'Admin' : ''));
 const homeLink = computed(() => resolveDefaultRoute(currentRole.value));
 
 const isActive = (path) => route.path === path || route.path.startsWith(`${path}/`);
@@ -200,21 +227,45 @@ const onSignOut = () => {
 .sidebar__menu {
   display: grid;
   align-content: start;
-  gap: 6px;
+  gap: 22px;
+  padding: 4px 2px;
+}
+
+.sidebar__group {
+  display: grid;
+  gap: 9px;
+}
+
+.sidebar__group-label {
+  margin: 0;
+  padding: 0 12px;
+  color: rgba(255, 255, 255, 0.58);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.sidebar__group-items {
+  display: grid;
+  gap: 7px;
 }
 
 .sidebar__item {
   position: relative;
   display: grid;
-  grid-template-columns: 4px 36px 1fr;
+  grid-template-columns: 5px 38px 1fr;
   align-items: center;
   gap: 10px;
-  min-height: 48px;
+  min-height: 50px;
   padding: 0 11px;
-  border-radius: 14px;
+  border-radius: 12px;
   color: rgba(255, 255, 255, 0.84);
+  border: 1px solid transparent;
   transition:
     background 0.2s ease,
+    border-color 0.2s ease,
     color 0.2s ease,
     transform 0.2s ease,
     box-shadow 0.2s ease;
@@ -227,26 +278,28 @@ const onSignOut = () => {
 }
 
 .sidebar__item--active {
-  background: linear-gradient(135deg, rgba(0, 163, 74, 0.18), rgba(0, 74, 232, 0.2));
+  background: linear-gradient(135deg, rgba(0, 163, 74, 0.32), rgba(0, 74, 232, 0.36));
+  border-color: rgba(255, 255, 255, 0.2);
   color: #ffffff;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08), 0 12px 26px rgba(0, 74, 232, 0.16);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1), 0 16px 32px rgba(0, 74, 232, 0.24);
 }
 
 .sidebar__item-glow {
-  width: 4px;
+  width: 5px;
   height: 24px;
   border-radius: 999px;
   background: transparent;
 }
 
 .sidebar__item--active .sidebar__item-glow {
+  height: 30px;
   background: linear-gradient(180deg, #00a34a 0%, #004ae8 100%);
-  box-shadow: 0 0 14px rgba(0, 163, 74, 0.45);
+  box-shadow: 0 0 18px rgba(0, 163, 74, 0.65);
 }
 
 .sidebar__item-icon {
-  width: 36px;
-  height: 36px;
+  width: 38px;
+  height: 38px;
   border-radius: 12px;
   display: inline-flex;
   align-items: center;
@@ -271,10 +324,15 @@ const onSignOut = () => {
   line-height: 1.15;
 }
 
+.sidebar__item--active .sidebar__item-label {
+  font-weight: 800;
+}
+
 .sidebar__item--active .sidebar__item-icon {
   color: #ffffff;
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.22);
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.16);
 }
 
 .sidebar__footer {
@@ -412,10 +470,19 @@ const onSignOut = () => {
   }
 
   .sidebar__menu {
+    display: flex;
+    gap: 16px;
+    overflow-x: auto;
+    padding-bottom: 6px;
+  }
+
+  .sidebar__group {
+    min-width: max-content;
+  }
+
+  .sidebar__group-items {
     grid-auto-flow: column;
     grid-auto-columns: minmax(132px, 1fr);
-    overflow-x: auto;
-    padding-bottom: 4px;
   }
 
   .sidebar__session-card {

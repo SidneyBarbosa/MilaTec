@@ -444,6 +444,48 @@ function formatCount(count, singular, plural) {
   return `${count} ${count === 1 ? singular : plural}`;
 }
 
+function parseCurrency(value) {
+  if (typeof value === 'number') return value;
+  if (!value) return 0;
+
+  const normalized = String(value)
+    .replace(/[^\d,.-]/g, '')
+    .replace(/\./g, '')
+    .replace(',', '.');
+  const parsed = Number(normalized);
+
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function formatCurrency(value) {
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+  }).format(value);
+}
+
+function unique(values) {
+  return [...new Set(values.filter(Boolean))];
+}
+
+function joinOrFallback(values, fallback) {
+  const list = unique(values);
+  return list.length ? list.join(' + ') : fallback;
+}
+
+function groupAttachmentsByEntity(attachments) {
+  return attachments.reduce((acc, attachment) => {
+    const key = `${attachment.entityType}:${attachment.entityId}`;
+    acc[key] = acc[key] || [];
+    acc[key].push(enrichAttachment(attachment));
+    return acc;
+  }, {});
+}
+
+function findAttachmentByCategory(attachments, category) {
+  return attachments.find((attachment) => attachment.category === category) || null;
+}
+
 function resolveCompanyId(companyId) {
   return empresasById[companyId] ? companyId : DEFAULT_COMPANY_ID;
 }
@@ -510,34 +552,54 @@ function buildClientPortalData(companyId = DEFAULT_COMPANY_ID) {
     return false;
   });
 
+  const attachmentsByEntity = groupAttachmentsByEntity(companyAttachments);
+  const getEntityAttachments = (entityType, entityId) => attachmentsByEntity[`${entityType}:${entityId}`] || [];
+
   const budgetAttachmentsById = companyBudgets.reduce((acc, budget) => {
-    acc[budget.id] = companyAttachments
-      .filter((attachment) => attachment.entityType === 'orcamento' && attachment.entityId === budget.id)
-      .map(enrichAttachment);
+    acc[budget.id] = getEntityAttachments('orcamento', budget.id);
     return acc;
   }, {});
 
   const projects = companyProjects.map((project) => {
     const work = obrasById[project.obraId];
+    const budget = orcamentosById[project.orcamentoId];
+    const projectAttachments = getEntityAttachments('projeto', project.id);
 
     return {
       ...project,
       workName: work?.name || 'Obra não vinculada',
+      workCity: work?.city || 'Cidade não informada',
+      budgetName: budget?.name || 'Orçamento não vinculado',
+      budgetType: budget?.budgetType || budget?.status || 'Tipo não informado',
+      budgetValue: budget?.value || project.totalValue,
+      budgetStatus: budget?.status || 'Status não informado',
+      attachments: projectAttachments,
+      executiveAttachment: findAttachmentByCategory(projectAttachments, 'Projeto executivo'),
+      approvalAttachment: findAttachmentByCategory(projectAttachments, 'Projeto aprovação'),
+      registrationAttachment: findAttachmentByCategory(projectAttachments, 'Registro de obra'),
     };
   });
 
   const deliveries = companyDeliveries.map((delivery) => {
     const linkedProject = projetosById[delivery.projetoId];
     const linkedWork = linkedProject ? obrasById[linkedProject.obraId] : null;
+    const deliveryAttachments = getEntityAttachments('entrega', delivery.id);
     const hasDate = Boolean(delivery.date);
 
     return {
       ...delivery,
       projectName: linkedProject?.name || 'Projeto não vinculado',
       workName: linkedWork?.name || 'Obra não vinculada',
+      workId: linkedWork?.id || linkedProject?.obraId || '',
+      workCity: linkedWork?.city || 'Cidade não informada',
       hasDate,
       displayDate: hasDate ? delivery.date : 'Sem data agendada',
       tone: hasDate ? delivery.tone : 'warning',
+      invoiceDate: delivery.invoiceDate || 'A faturar',
+      value: delivery.value || linkedProject?.totalValue || 'Valor não informado',
+      attachments: deliveryAttachments,
+      invoiceAttachment: findAttachmentByCategory(deliveryAttachments, 'Nota fiscal'),
+      packingListAttachment: findAttachmentByCategory(deliveryAttachments, 'Romaneio'),
     };
   });
 
@@ -561,6 +623,40 @@ function buildClientPortalData(companyId = DEFAULT_COMPANY_ID) {
     attachments: budgetAttachmentsById[budget.id] || [],
   }));
 
+  const works = companyWorks.map((work) => {
+    const linkedProjects = projects.filter((project) => project.obraId === work.id);
+    const linkedDeliveries = deliveries.filter((delivery) => delivery.workId === work.id);
+    const linkedBudgetIds = unique(linkedProjects.map((project) => project.orcamentoId));
+    const linkedAttachments = [
+      ...linkedBudgetIds.flatMap((budgetId) => budgetAttachmentsById[budgetId] || []),
+      ...linkedProjects.flatMap((project) => project.attachments),
+      ...linkedDeliveries.flatMap((delivery) => delivery.attachments),
+    ];
+    const totalValue = linkedProjects.reduce((sum, project) => sum + parseCurrency(project.totalValue), 0);
+
+    return {
+      ...work,
+      quantity: joinOrFallback(linkedProjects.map((project) => project.quantity), 'Sem quantidade informada'),
+      value: formatCurrency(totalValue),
+      budgetType: joinOrFallback(linkedProjects.map((project) => project.budgetType), 'Tipo não informado'),
+      budgetTypes: unique(linkedProjects.map((project) => project.budgetType)),
+      linkedProjects: linkedProjects.map((project) => ({
+        id: project.id,
+        name: project.name,
+        stage: project.stage,
+        quantity: project.quantity,
+        totalValue: project.totalValue,
+      })),
+      linkedDeliveries: linkedDeliveries.map((delivery) => ({
+        id: delivery.id,
+        name: delivery.name,
+        displayDate: delivery.displayDate,
+        status: delivery.status,
+      })),
+      attachments: linkedAttachments,
+    };
+  });
+
   const activeBudgets = budgets.filter((budget) => budget.active);
   const inProgressProjects = projects.filter((project) => project.inProgress);
   const nextDelivery = getUpcoming(deliveries);
@@ -576,7 +672,7 @@ function buildClientPortalData(companyId = DEFAULT_COMPANY_ID) {
       primaryPhone: primaryContact?.phone || 'Telefone não informado',
     },
     contacts: contatosByEmpresaId[scopedCompanyId] || [],
-    works: companyWorks,
+    works,
     budgets,
     projects,
     deliveries,

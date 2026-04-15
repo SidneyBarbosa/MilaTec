@@ -37,7 +37,7 @@ const routes = [
   },
   {
     path: '/cliente',
-    redirect: { name: 'client-home' },
+    redirect: { name: 'client-company' },
   },
   {
     path: '/cliente/inicio',

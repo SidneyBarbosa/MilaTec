@@ -75,7 +75,7 @@ export function canAccessRoles(roles, role = sessionRole.value) {
 
 export function resolveDefaultRoute(role = sessionRole.value) {
   if (role === 'admin') return { name: 'admin-clients' };
-  if (role === 'client') return { name: 'client-home' };
+  if (role === 'client') return { name: 'client-company' };
   return { name: 'login' };
 }
 
