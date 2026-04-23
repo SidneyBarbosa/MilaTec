@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module';
 import { AirtableModule } from './airtable/airtable.module';
+import { CompanyModule } from './company/company.module';
 
 @Module({
   imports: [
@@ -10,6 +11,7 @@ import { AirtableModule } from './airtable/airtable.module';
     }),
     AirtableModule,
     AuthModule,
+    CompanyModule,
   ],
 })
 export class AppModule {}
