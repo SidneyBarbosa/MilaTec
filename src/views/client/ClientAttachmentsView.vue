@@ -1,5 +1,18 @@
 ﻿<template>
   <div class="page page--wide">
+    <FiltersBar
+      :count="filteredAttachments.length"
+      :total="attachments.length"
+      label="anexos"
+      :show-clear="Boolean(searchTerm || selectedCategory || selectedWorkFilterId || selectedProjectFilterId)"
+      @clear="clearFilters"
+    >
+      <BaseInput v-model="searchTerm" label="Buscar" placeholder="Arquivo, vínculo ou categoria" tone="light" />
+      <BaseSelect v-model="selectedWorkFilterId" label="Obra" :options="workOptions" tone="light" />
+      <BaseSelect v-model="selectedProjectFilterId" label="Projeto" :options="projectOptions" tone="light" />
+      <BaseSelect v-model="selectedCategory" label="Categoria" :options="categoryOptions" tone="light" />
+    </FiltersBar>
+
     <BaseCard class="table-card">
       <div class="table">
         <div class="table__head">
@@ -46,6 +59,8 @@
               </a>
             </span>
           </div>
+
+          <p v-if="!paginatedAttachments.length" class="table__empty">Nenhum anexo encontrado com os filtros atuais.</p>
         </div>
       </div>
     </BaseCard>
@@ -119,31 +134,131 @@
 
 <script setup>
 import { computed, ref, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import BaseCard from '@/components/common/BaseCard.vue';
+import BaseInput from '@/components/common/BaseInput.vue';
+import BaseSelect from '@/components/common/BaseSelect.vue';
+import FiltersBar from '@/components/common/FiltersBar.vue';
 import { useClientPortalData } from '@/composables/useClientPortalData';
+import { matchesSearch, uniqueTextOptions } from '@/utils/text';
 
+const route = useRoute();
+const router = useRouter();
 const { portalData } = useClientPortalData();
 const currentPage = ref(1);
 const previewAttachmentId = ref('');
+const searchTerm = ref('');
+const selectedWorkFilterId = ref('');
+const selectedProjectFilterId = ref('');
+const selectedCategory = ref('');
 const pageSize = 8;
 
+const works = computed(() => portalData.value.works || []);
+const projects = computed(() => portalData.value.projects || []);
 const attachments = computed(() =>
   portalData.value.attachments.filter((attachment) =>
     ['orcamento', 'projeto', 'entrega'].includes(attachment.entityType),
   ),
 );
-const totalPages = computed(() => Math.max(1, Math.ceil(attachments.value.length / pageSize)));
+const workOptions = computed(() => [
+  { label: 'Todas as obras', value: '' },
+  ...works.value.map((work) => ({
+    label: work.name,
+    value: work.id,
+  })),
+]);
+const projectOptions = computed(() => [
+  { label: 'Todos os projetos', value: '' },
+  ...projects.value.map((project) => ({
+    label: project.name,
+    value: project.id,
+  })),
+]);
+const categoryOptions = computed(() => [
+  { label: 'Todas as categorias', value: '' },
+  ...uniqueTextOptions(attachments.value.map((attachment) => attachment.category)).map((category) => ({
+    label: category,
+    value: category,
+  })),
+]);
+const filteredAttachments = computed(() =>
+  attachments.value.filter(
+    (attachment) =>
+      (!selectedWorkFilterId.value || attachment.relatedWorkIds?.includes(selectedWorkFilterId.value)) &&
+      (!selectedProjectFilterId.value || attachment.relatedProjectIds?.includes(selectedProjectFilterId.value)) &&
+      (!selectedCategory.value || attachment.category === selectedCategory.value) &&
+      matchesSearch(
+        [
+          attachment.name,
+          attachment.linkedTypeLabel,
+          attachment.linkedRecordName,
+          ...(attachment.relatedWorkNames || []),
+          ...(attachment.relatedProjectNames || []),
+          attachment.category,
+          attachment.uploadedAt,
+        ],
+        searchTerm.value,
+      ),
+  ),
+);
+const totalPages = computed(() => Math.max(1, Math.ceil(filteredAttachments.value.length / pageSize)));
 const paginatedAttachments = computed(() => {
   const start = (currentPage.value - 1) * pageSize;
-  return attachments.value.slice(start, start + pageSize);
+  return filteredAttachments.value.slice(start, start + pageSize);
 });
 const previewAttachment = computed(
   () => attachments.value.find((attachment) => attachment.id === previewAttachmentId.value) || null,
 );
 
-watch(attachments, () => {
+watch(filteredAttachments, () => {
   if (currentPage.value > totalPages.value) currentPage.value = totalPages.value;
 });
+
+watch(
+  () => route.query.obraFiltro,
+  (workFilterId) => {
+    selectedWorkFilterId.value = typeof workFilterId === 'string' ? workFilterId : '';
+  },
+  { immediate: true },
+);
+
+watch(
+  () => route.query.projetoFiltro,
+  (projectFilterId) => {
+    selectedProjectFilterId.value = typeof projectFilterId === 'string' ? projectFilterId : '';
+  },
+  { immediate: true },
+);
+
+watch([selectedWorkFilterId, selectedProjectFilterId], ([workFilterId, projectFilterId]) => {
+  const currentWorkFilterId = typeof route.query.obraFiltro === 'string' ? route.query.obraFiltro : '';
+  const currentProjectFilterId = typeof route.query.projetoFiltro === 'string' ? route.query.projetoFiltro : '';
+
+  if (currentWorkFilterId === workFilterId && currentProjectFilterId === projectFilterId) return;
+
+  const nextQuery = { ...route.query };
+
+  if (workFilterId) {
+    nextQuery.obraFiltro = workFilterId;
+  } else {
+    delete nextQuery.obraFiltro;
+  }
+
+  if (projectFilterId) {
+    nextQuery.projetoFiltro = projectFilterId;
+  } else {
+    delete nextQuery.projetoFiltro;
+  }
+
+  router.replace({ query: nextQuery });
+});
+
+const clearFilters = () => {
+  searchTerm.value = '';
+  selectedWorkFilterId.value = '';
+  selectedProjectFilterId.value = '';
+  selectedCategory.value = '';
+};
 
 const openPreview = (attachment) => {
   previewAttachmentId.value = attachment.id;
@@ -216,6 +331,11 @@ const categoryClass = (category) => {
 
 .table__row:last-child {
   border-bottom: none;
+}
+
+.table__empty {
+  padding: 18px 24px;
+  color: var(--muted);
 }
 
 .table__cell {

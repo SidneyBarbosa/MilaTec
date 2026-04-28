@@ -39,9 +39,9 @@
     </section>
 
     <section class="dashboard-grid">
-      <BaseCard>
+      <BaseCard class="company-summary-card">
         <template #header>
-          <div>
+          <div class="section-heading">
             <p class="pill">Empresa</p>
             <h3>Dados principais</h3>
           </div>
@@ -73,41 +73,55 @@
 
       <BaseCard>
         <template #header>
-          <div>
+          <div class="section-heading">
             <p class="pill">Acompanhamento</p>
             <h3>Resumo operacional</h3>
           </div>
         </template>
 
-        <div class="overview-list">
-          <section v-for="group in operationalOverview" :key="group.label" class="overview-group">
-            <header>
-              <span>{{ group.label }}</span>
-              <strong>{{ group.total }}</strong>
-            </header>
+        <div
+          class="expandable-panel expandable-panel--overview"
+          :class="{ 'expandable-panel--expanded': isOverviewExpanded }"
+        >
+          <div class="overview-list">
+            <section v-for="group in operationalOverview" :key="group.label" class="overview-group">
+              <header>
+                <span>{{ group.label }}</span>
+                <strong>{{ group.total }}</strong>
+              </header>
 
-            <div v-if="group.rows.length" class="overview-group__rows">
-              <div v-for="row in group.rows" :key="`${group.label}-${row.label}`" class="overview-row">
-                <div>
-                  <span>{{ row.label }}</span>
-                  <strong>{{ row.count }}</strong>
+              <div v-if="group.rows.length" class="overview-group__rows">
+                <div v-for="row in group.rows" :key="`${group.label}-${row.label}`" class="overview-row">
+                  <div>
+                    <span>{{ row.label }}</span>
+                    <strong>{{ row.count }}</strong>
+                  </div>
+                  <span class="overview-row__bar" aria-hidden="true">
+                    <span :style="{ width: `${row.percentage}%` }" />
+                  </span>
                 </div>
-                <span class="overview-row__bar" aria-hidden="true">
-                  <span :style="{ width: `${row.percentage}%` }" />
-                </span>
               </div>
-            </div>
 
-            <p v-else class="empty-state">Nenhum registro disponível.</p>
-          </section>
+              <p v-else class="empty-state">Nenhum registro disponível.</p>
+            </section>
+          </div>
         </div>
+
+        <button
+          type="button"
+          class="card-toggle"
+          :aria-expanded="isOverviewExpanded"
+          @click="isOverviewExpanded = !isOverviewExpanded"
+        >
+          {{ isOverviewExpanded ? 'Mostrar menos' : 'Ler mais' }}
+        </button>
       </BaseCard>
     </section>
 
     <section class="dashboard-columns">
       <BaseCard>
         <template #header>
-          <div>
+          <div class="section-heading">
             <p class="pill">Obras</p>
             <h3>Obras em acompanhamento</h3>
           </div>
@@ -133,7 +147,7 @@
 
       <BaseCard>
         <template #header>
-          <div>
+          <div class="section-heading">
             <p class="pill">Entregas</p>
             <h3>Próximas entregas</h3>
           </div>
@@ -157,7 +171,7 @@
     <section class="dashboard-columns">
       <BaseCard>
         <template #header>
-          <div>
+          <div class="section-heading">
             <p class="pill">Projetos</p>
             <h3>Projetos visíveis</h3>
           </div>
@@ -183,7 +197,7 @@
 
       <BaseCard>
         <template #header>
-          <div>
+          <div class="section-heading">
             <p class="pill">Documentos</p>
             <h3>Últimos anexos liberados</h3>
           </div>
@@ -207,29 +221,16 @@
       </BaseCard>
     </section>
 
-    <BaseCard>
-      <template #header>
-        <div>
-          <p class="pill">Consulta</p>
-          <h3>Modo somente leitura</h3>
-        </div>
-      </template>
-
-      <ul class="rules">
-        <li v-for="rule in readOnlyRules" :key="rule">
-          {{ rule }}
-        </li>
-      </ul>
-    </BaseCard>
   </div>
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import BaseCard from '@/components/common/BaseCard.vue';
 import { useClientPortalData } from '@/composables/useClientPortalData';
 
 const { portalData } = useClientPortalData();
+const isOverviewExpanded = ref(false);
 
 const currencyFormatter = new Intl.NumberFormat('pt-BR', {
   style: 'currency',
@@ -242,7 +243,6 @@ const budgets = computed(() => portalData.value.budgets || []);
 const projects = computed(() => portalData.value.projects || []);
 const deliveries = computed(() => portalData.value.deliveries || []);
 const attachments = computed(() => portalData.value.attachments || []);
-const readOnlyRules = computed(() => portalData.value.readOnlyRules || []);
 
 const activeBudgets = computed(() => budgets.value.filter((budget) => budget.active));
 const inProgressProjects = computed(() => projects.value.filter((project) => project.inProgress));
@@ -387,17 +387,30 @@ function summarizeBy(items, getLabel) {
 .company-hero__copy {
   display: grid;
   align-content: center;
-  gap: 12px;
+  justify-items: start;
+  gap: 14px;
 }
 
 .company-hero__copy h3 {
   max-width: 760px;
   color: var(--text-strong);
   font-size: 28px;
+  line-height: 1.18;
 }
 
 .company-hero__copy p:not(.pill) {
   max-width: 760px;
+}
+
+.section-heading {
+  display: grid;
+  justify-items: start;
+  gap: 10px;
+}
+
+.section-heading h3 {
+  color: var(--text-strong);
+  line-height: 1.2;
 }
 
 .company-hero__details {
@@ -441,30 +454,55 @@ function summarizeBy(items, getLabel) {
   overflow-wrap: anywhere;
 }
 
+.metric-card {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(245, 249, 255, 0.94));
+}
+
+.metric-card::after {
+  content: '';
+  position: absolute;
+  right: -44px;
+  bottom: -72px;
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0, 163, 74, 0.12), rgba(0, 163, 74, 0) 72%);
+  pointer-events: none;
+}
+
+.metric-card :deep(.card__body) {
+  position: relative;
+  z-index: 1;
+  align-items: flex-start;
+  gap: 12px;
+}
+
 .dashboard-grid,
 .dashboard-columns {
   display: grid;
   grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
   gap: var(--space-5);
+  align-items: start;
 }
 
 .dashboard-columns {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-.details,
-.rules {
+.details {
   margin: 0;
   padding: 0;
 }
 
 .details {
   display: grid;
-  gap: 14px;
+  gap: 12px;
 }
 
 .details__row {
-  padding-bottom: 14px;
+  padding-bottom: 12px;
   border-bottom: 1px solid var(--stroke);
 }
 
@@ -476,9 +514,13 @@ function summarizeBy(items, getLabel) {
 .details__row dd {
   margin: 6px 0 0;
   color: var(--text-strong);
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 600;
   overflow-wrap: anywhere;
+}
+
+.company-summary-card :deep(.card__body) {
+  gap: 10px;
 }
 
 .overview-list,
@@ -487,10 +529,63 @@ function summarizeBy(items, getLabel) {
 .work-list,
 .timeline-list,
 .project-list,
-.document-list,
-.rules {
+.document-list {
   display: grid;
   gap: 12px;
+}
+
+.expandable-panel {
+  position: relative;
+  overflow: hidden;
+  transition: max-height 0.28s ease;
+}
+
+.expandable-panel--overview {
+  max-height: 260px;
+}
+
+.expandable-panel--expanded {
+  max-height: 1200px;
+}
+
+.expandable-panel--overview:not(.expandable-panel--expanded)::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 72px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0), var(--card));
+  pointer-events: none;
+}
+
+.card-toggle {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  min-height: 38px;
+  padding: 0 14px;
+  border: 1px solid rgba(0, 74, 232, 0.16);
+  border-radius: 999px;
+  background: rgba(0, 74, 232, 0.06);
+  color: var(--primary);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.card-toggle:hover,
+.card-toggle:focus-visible {
+  background: rgba(0, 74, 232, 0.1);
+  border-color: rgba(0, 74, 232, 0.24);
+  transform: translateY(-1px);
+  box-shadow: 0 10px 20px rgba(0, 74, 232, 0.08);
+  outline: none;
 }
 
 .overview-group {
@@ -628,28 +723,6 @@ function summarizeBy(items, getLabel) {
   background: rgba(0, 74, 232, 0.08);
   font-size: 12px;
   font-weight: 800;
-}
-
-.rules {
-  list-style: none;
-}
-
-.rules li {
-  position: relative;
-  padding-left: 18px;
-  color: var(--muted);
-  line-height: 1.6;
-}
-
-.rules li::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 10px;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--accent);
 }
 
 .empty-state {

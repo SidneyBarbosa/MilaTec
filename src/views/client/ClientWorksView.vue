@@ -1,6 +1,18 @@
 ﻿<template>
   <div class="page page--wide">
-    <section class="kanban-board" aria-label="Obras por etapa">
+    <FiltersBar
+      :count="filteredWorks.length"
+      :total="works.length"
+      label="obras"
+      :show-clear="Boolean(searchTerm || selectedStage || selectedWorkFilterId)"
+      @clear="clearFilters"
+    >
+      <BaseInput v-model="searchTerm" label="Buscar" placeholder="Obra, cidade ou tipo de orçamento" tone="light" />
+      <BaseSelect v-model="selectedWorkFilterId" label="Obra" :options="workOptions" tone="light" />
+      <BaseSelect v-model="selectedStage" label="Etapa" :options="stageOptions" tone="light" />
+    </FiltersBar>
+
+    <section v-if="filteredWorks.length" class="kanban-board" aria-label="Obras por etapa">
       <article
         v-for="column in kanbanColumns"
         :key="column.stage"
@@ -45,6 +57,8 @@
         </div>
       </article>
     </section>
+
+    <div v-else class="board-empty">Nenhuma obra encontrada com os filtros atuais.</div>
 
     <div
       v-if="selectedWork"
@@ -292,24 +306,53 @@
 <script setup>
 import { computed, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import BaseInput from '@/components/common/BaseInput.vue';
+import BaseSelect from '@/components/common/BaseSelect.vue';
+import FiltersBar from '@/components/common/FiltersBar.vue';
 import { useClientPortalData } from '@/composables/useClientPortalData';
 import { stageStyle } from '@/utils/stageColors';
+import { matchesSearch, normalizeText, uniqueTextOptions } from '@/utils/text';
 
 const route = useRoute();
 const router = useRouter();
 const { portalData } = useClientPortalData();
 const selectedWorkId = ref('');
 const columnLimits = ref({});
+const searchTerm = ref('');
+const selectedWorkFilterId = ref('');
+const selectedStage = ref('');
 const kanbanPageSize = 6;
 
 const portalCompany = computed(() => portalData.value.company);
 const works = computed(() => portalData.value.works);
+const workOptions = computed(() => [
+  { label: 'Todas as obras', value: '' },
+  ...works.value.map((work) => ({
+    label: work.name,
+    value: work.id,
+  })),
+]);
+const stageOptions = computed(() => [
+  { label: 'Todas as etapas', value: '' },
+  ...uniqueTextOptions(works.value.map((work) => work.stage)).map((stage) => ({
+    label: stage,
+    value: stage,
+  })),
+]);
+const filteredWorks = computed(() =>
+  works.value.filter(
+    (work) =>
+      (!selectedWorkFilterId.value || work.id === selectedWorkFilterId.value) &&
+      (!selectedStage.value || work.stage === selectedStage.value) &&
+      matchesSearch([work.name, work.city, work.budgetType, work.stage], searchTerm.value),
+  ),
+);
 const selectedWork = computed(() => works.value.find((work) => work.id === selectedWorkId.value) || null);
 const kanbanColumns = computed(() => {
-  const stages = [...new Set(works.value.map((work) => work.stage))];
+  const stages = [...new Set(filteredWorks.value.map((work) => work.stage))];
 
   return stages.map((stage) => {
-    const stageItems = works.value.filter((work) => work.stage === stage);
+    const stageItems = filteredWorks.value.filter((work) => work.stage === stage);
     const limit = columnLimits.value[stage] || kanbanPageSize;
 
     return {
@@ -328,6 +371,29 @@ watch(
   },
   { immediate: true },
 );
+
+watch(
+  () => route.query.obraFiltro,
+  (workFilterId) => {
+    selectedWorkFilterId.value = typeof workFilterId === 'string' ? workFilterId : '';
+  },
+  { immediate: true },
+);
+
+watch(selectedWorkFilterId, (workFilterId) => {
+  if ((route.query.obraFiltro || '') === workFilterId) return;
+
+  const nextQuery = { ...route.query };
+  delete nextQuery.projetoFiltro;
+
+  if (workFilterId) {
+    nextQuery.obraFiltro = workFilterId;
+  } else {
+    delete nextQuery.obraFiltro;
+  }
+
+  router.replace({ query: nextQuery });
+});
 
 const selectWork = (work) => {
   selectedWorkId.value = work.id;
@@ -355,6 +421,12 @@ const showMore = (stage) => {
   };
 };
 
+const clearFilters = () => {
+  searchTerm.value = '';
+  selectedWorkFilterId.value = '';
+  selectedStage.value = '';
+};
+
 const displayValue = (value) => value || '-';
 
 const uniqueValues = (values) => [...new Set(values.filter(Boolean))];
@@ -368,12 +440,6 @@ const productsLabel = (work) => {
   const products = uniqueValues((work?.linkedProjects || []).map((project) => project.product));
   return products.length ? products.join(' + ') : '-';
 };
-
-const normalizeText = (value) =>
-  String(value || '')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase();
 
 const attachmentMatchesCategory = (attachment, categories) => {
   const normalizedCategory = normalizeText(attachment.category);
@@ -432,6 +498,14 @@ const resolveActionIcon = (actionLabel) => {
   gap: 14px;
   align-items: start;
   justify-content: start;
+}
+
+.board-empty {
+  padding: 18px 20px;
+  border: 1px solid var(--stroke-soft);
+  border-radius: 8px;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.76);
 }
 
 .kanban-column {

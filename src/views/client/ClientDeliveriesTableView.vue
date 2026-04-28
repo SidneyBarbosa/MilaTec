@@ -21,6 +21,17 @@
       </button>
     </div>
 
+    <FiltersBar
+      :count="filteredDeliveries.length"
+      :total="deliveries.length"
+      label="entregas"
+      :show-clear="Boolean(searchTerm || selectedStage)"
+      @clear="clearFilters"
+    >
+      <BaseInput v-model="searchTerm" label="Buscar" placeholder="Entrega, obra ou endereço" tone="light" />
+      <BaseSelect v-model="selectedStage" label="Etapa" :options="stageOptions" tone="light" />
+    </FiltersBar>
+
     <section v-if="viewMode === 'calendar'" class="calendar-panel">
       <header class="calendar-panel__header">
         <div>
@@ -68,6 +79,10 @@
           {{ delivery.name }}
         </button>
       </section>
+
+      <div v-if="!filteredDeliveries.length" class="calendar-empty">
+        Nenhuma entrega encontrada com os filtros atuais.
+      </div>
     </section>
 
     <section v-else class="table-card">
@@ -125,6 +140,8 @@
               </button>
             </span>
           </div>
+
+          <p v-if="!paginatedDeliveries.length" class="table__empty">Nenhuma entrega encontrada com os filtros atuais.</p>
         </div>
       </div>
 
@@ -230,7 +247,11 @@
 <script setup>
 import { computed, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import BaseInput from '@/components/common/BaseInput.vue';
+import BaseSelect from '@/components/common/BaseSelect.vue';
+import FiltersBar from '@/components/common/FiltersBar.vue';
 import { useClientPortalData } from '@/composables/useClientPortalData';
+import { matchesSearch, uniqueTextOptions } from '@/utils/text';
 
 const route = useRoute();
 const router = useRouter();
@@ -238,20 +259,45 @@ const { portalData } = useClientPortalData();
 const viewMode = ref('calendar');
 const selectedDeliveryId = ref('');
 const currentTablePage = ref(1);
+const searchTerm = ref('');
+const selectedStage = ref('');
 const tablePageSize = 8;
 
 const weekdays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 const deliveries = computed(() => portalData.value.deliveries);
+const stageOptions = computed(() => [
+  { label: 'Todas as etapas', value: '' },
+  ...uniqueTextOptions(deliveries.value.map((delivery) => delivery.stage)).map((stage) => ({
+    label: stage,
+    value: stage,
+  })),
+]);
+const filteredDeliveries = computed(() =>
+  deliveries.value.filter(
+    (delivery) =>
+      (!selectedStage.value || delivery.stage === selectedStage.value) &&
+      matchesSearch(
+        [
+          delivery.name,
+          delivery.workName,
+          delivery.deliveryAddress,
+          delivery.stage,
+          delivery.invoiceDate,
+        ],
+        searchTerm.value,
+      ),
+  ),
+);
 const selectedDelivery = computed(
   () => deliveries.value.find((delivery) => delivery.id === selectedDeliveryId.value) || null,
 );
-const totalTablePages = computed(() => Math.max(1, Math.ceil(deliveries.value.length / tablePageSize)));
+const totalTablePages = computed(() => Math.max(1, Math.ceil(filteredDeliveries.value.length / tablePageSize)));
 const paginatedDeliveries = computed(() => {
   const start = (currentTablePage.value - 1) * tablePageSize;
-  return deliveries.value.slice(start, start + tablePageSize);
+  return filteredDeliveries.value.slice(start, start + tablePageSize);
 });
-const datedDeliveries = computed(() => deliveries.value.filter((delivery) => delivery.hasDate));
-const unscheduledDeliveries = computed(() => deliveries.value.filter((delivery) => !delivery.hasDate));
+const datedDeliveries = computed(() => filteredDeliveries.value.filter((delivery) => delivery.hasDate));
+const unscheduledDeliveries = computed(() => filteredDeliveries.value.filter((delivery) => !delivery.hasDate));
 
 const calendarMonth = computed(() => {
   const dates = datedDeliveries.value
@@ -289,7 +335,7 @@ const calendarDays = computed(() => {
       key: dateKey,
       day,
       empty: false,
-      deliveries: deliveries.value.filter((delivery) => getDeliveryDateKey(delivery) === dateKey),
+      deliveries: filteredDeliveries.value.filter((delivery) => getDeliveryDateKey(delivery) === dateKey),
     });
   }
 
@@ -324,9 +370,14 @@ watch(
   { immediate: true },
 );
 
-watch(deliveries, () => {
+watch(filteredDeliveries, () => {
   if (currentTablePage.value > totalTablePages.value) currentTablePage.value = totalTablePages.value;
 });
+
+const clearFilters = () => {
+  searchTerm.value = '';
+  selectedStage.value = '';
+};
 
 const selectDelivery = (delivery) => {
   selectedDeliveryId.value = delivery.id;
@@ -435,6 +486,11 @@ const resolveActionIcon = (actionLabel) => {
 
 .calendar-scroll {
   overflow-x: auto;
+}
+
+.calendar-empty {
+  padding: 20px;
+  color: var(--muted);
 }
 
 .weekday-grid,
@@ -577,6 +633,11 @@ const resolveActionIcon = (actionLabel) => {
 
 .table__row:last-child {
   border-bottom: none;
+}
+
+.table__empty {
+  padding: 18px 24px;
+  color: var(--muted);
 }
 
 .table__row--pending-date {

@@ -1,6 +1,18 @@
 ﻿<template>
   <div class="page page--wide">
-    <section class="kanban-board" aria-label="Projetos por etapa">
+    <FiltersBar
+      :count="filteredProjects.length"
+      :total="projects.length"
+      label="projetos"
+      :show-clear="Boolean(searchTerm || selectedStage || selectedProjectFilterId)"
+      @clear="clearFilters"
+    >
+      <BaseInput v-model="searchTerm" label="Buscar" placeholder="Projeto, obra, produto ou tipo" tone="light" />
+      <BaseSelect v-model="selectedProjectFilterId" label="Projeto" :options="projectOptions" tone="light" />
+      <BaseSelect v-model="selectedStage" label="Etapa" :options="stageOptions" tone="light" />
+    </FiltersBar>
+
+    <section v-if="filteredProjects.length" class="kanban-board" aria-label="Projetos por etapa">
       <article
         v-for="column in kanbanColumns"
         :key="column.stage"
@@ -46,6 +58,8 @@
         </div>
       </article>
     </section>
+
+    <div v-else class="board-empty">Nenhum projeto encontrado com os filtros atuais.</div>
 
     <div
       v-if="selectedProject"
@@ -187,26 +201,58 @@
 <script setup>
 import { computed, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import BaseInput from '@/components/common/BaseInput.vue';
+import BaseSelect from '@/components/common/BaseSelect.vue';
+import FiltersBar from '@/components/common/FiltersBar.vue';
 import { useClientPortalData } from '@/composables/useClientPortalData';
 import { stageStyle } from '@/utils/stageColors';
+import { matchesSearch, uniqueTextOptions } from '@/utils/text';
 
 const route = useRoute();
 const router = useRouter();
 const { portalData } = useClientPortalData();
 const selectedProjectId = ref('');
 const columnLimits = ref({});
+const searchTerm = ref('');
+const selectedProjectFilterId = ref('');
+const selectedStage = ref('');
 const kanbanPageSize = 6;
 
 const portalCompany = computed(() => portalData.value.company);
 const projects = computed(() => portalData.value.projects);
+const projectOptions = computed(() => [
+  { label: 'Todos os projetos', value: '' },
+  ...projects.value.map((project) => ({
+    label: project.name,
+    value: project.id,
+  })),
+]);
+const stageOptions = computed(() => [
+  { label: 'Todas as etapas', value: '' },
+  ...uniqueTextOptions(projects.value.map((project) => project.stage)).map((stage) => ({
+    label: stage,
+    value: stage,
+  })),
+]);
+const filteredProjects = computed(() =>
+  projects.value.filter(
+    (project) =>
+      (!selectedProjectFilterId.value || project.id === selectedProjectFilterId.value) &&
+      (!selectedStage.value || project.stage === selectedStage.value) &&
+      matchesSearch(
+        [project.name, project.workName, project.product, project.type, project.stage, project.budgetType],
+        searchTerm.value,
+      ),
+  ),
+);
 const selectedProject = computed(
   () => projects.value.find((project) => project.id === selectedProjectId.value) || null,
 );
 const kanbanColumns = computed(() => {
-  const stages = [...new Set(projects.value.map((project) => project.stage))];
+  const stages = [...new Set(filteredProjects.value.map((project) => project.stage))];
 
   return stages.map((stage) => {
-    const stageItems = projects.value.filter((project) => project.stage === stage);
+    const stageItems = filteredProjects.value.filter((project) => project.stage === stage);
     const limit = columnLimits.value[stage] || kanbanPageSize;
 
     return {
@@ -225,6 +271,29 @@ watch(
   },
   { immediate: true },
 );
+
+watch(
+  () => route.query.projetoFiltro,
+  (projectFilterId) => {
+    selectedProjectFilterId.value = typeof projectFilterId === 'string' ? projectFilterId : '';
+  },
+  { immediate: true },
+);
+
+watch(selectedProjectFilterId, (projectFilterId) => {
+  if ((route.query.projetoFiltro || '') === projectFilterId) return;
+
+  const nextQuery = { ...route.query };
+  delete nextQuery.obraFiltro;
+
+  if (projectFilterId) {
+    nextQuery.projetoFiltro = projectFilterId;
+  } else {
+    delete nextQuery.projetoFiltro;
+  }
+
+  router.replace({ query: nextQuery });
+});
 
 const selectProject = (project) => {
   selectedProjectId.value = project.id;
@@ -246,6 +315,12 @@ const showMore = (stage) => {
     ...columnLimits.value,
     [stage]: (columnLimits.value[stage] || kanbanPageSize) + kanbanPageSize,
   };
+};
+
+const clearFilters = () => {
+  searchTerm.value = '';
+  selectedProjectFilterId.value = '';
+  selectedStage.value = '';
 };
 
 const displayValue = (value) => value || '-';
@@ -282,6 +357,14 @@ const resolveActionIcon = (actionLabel) => {
   gap: 14px;
   align-items: start;
   justify-content: start;
+}
+
+.board-empty {
+  padding: 18px 20px;
+  border: 1px solid var(--stroke-soft);
+  border-radius: 8px;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.76);
 }
 
 .kanban-column {

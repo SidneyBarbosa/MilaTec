@@ -1,5 +1,15 @@
-﻿<template>
+<template>
   <div class="page">
+    <FiltersBar
+      :count="filteredWorks.length"
+      :total="works.length"
+      label="obras"
+      :show-clear="Boolean(searchTerm || selectedStage)"
+      @clear="clearFilters"
+    >
+      <BaseInput v-model="searchTerm" label="Buscar" placeholder="Cliente, obra ou cidade" tone="light" />
+      <BaseSelect v-model="selectedStage" label="Etapa" :options="stageOptions" tone="light" />
+    </FiltersBar>
 
     <BaseCard class="table-card">
       <div class="table">
@@ -11,7 +21,7 @@
         </div>
 
         <div class="table__body">
-          <div v-for="work in works" :key="`${work.client}-${work.name}`" class="table__row">
+          <div v-for="work in filteredWorks" :key="`${work.client}-${work.name}`" class="table__row">
             <span class="table__cell table__cell--title">{{ work.client }}</span>
             <span class="table__cell">{{ work.name }}</span>
             <span class="table__cell">{{ work.city }}</span>
@@ -19,6 +29,8 @@
               <span class="status-badge status-badge--info">{{ work.stage }}</span>
             </span>
           </div>
+
+          <p v-if="!filteredWorks.length" class="table__empty">Nenhuma obra encontrada com os filtros atuais.</p>
         </div>
       </div>
     </BaseCard>
@@ -26,10 +38,38 @@
 </template>
 
 <script setup>
+import { computed, ref } from 'vue';
 import BaseCard from '@/components/common/BaseCard.vue';
+import BaseInput from '@/components/common/BaseInput.vue';
+import BaseSelect from '@/components/common/BaseSelect.vue';
+import FiltersBar from '@/components/common/FiltersBar.vue';
 import { getAdminPortalData } from '@/services/portalData';
+import { matchesSearch, uniqueTextOptions } from '@/utils/text';
 
 const { works } = getAdminPortalData();
+const searchTerm = ref('');
+const selectedStage = ref('');
+
+const stageOptions = computed(() => [
+  { label: 'Todas as etapas', value: '' },
+  ...uniqueTextOptions(works.map((work) => work.stage)).map((stage) => ({
+    label: stage,
+    value: stage,
+  })),
+]);
+
+const filteredWorks = computed(() =>
+  works.filter(
+    (work) =>
+      (!selectedStage.value || work.stage === selectedStage.value) &&
+      matchesSearch([work.client, work.name, work.city, work.stage], searchTerm.value),
+  ),
+);
+
+const clearFilters = () => {
+  searchTerm.value = '';
+  selectedStage.value = '';
+};
 </script>
 
 <style scoped>
@@ -68,6 +108,11 @@ const { works } = getAdminPortalData();
   border-bottom: none;
 }
 
+.table__empty {
+  padding: 18px 22px;
+  color: var(--muted);
+}
+
 .table__cell--title {
   color: var(--text-strong);
   font-weight: 600;
@@ -83,4 +128,3 @@ const { works } = getAdminPortalData();
   }
 }
 </style>
-

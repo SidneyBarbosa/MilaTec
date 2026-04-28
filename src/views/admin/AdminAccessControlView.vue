@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="page">
     <section class="metric-grid">
       <BaseCard v-for="card in accessSummary" :key="card.label" class="metric-card">
@@ -17,6 +17,17 @@
           </div>
         </template>
 
+        <FiltersBar
+          :count="filteredProfiles.length"
+          :total="accessProfiles.length"
+          label="perfis"
+          :show-clear="Boolean(searchTerm || selectedStatus)"
+          @clear="clearFilters"
+        >
+          <BaseInput v-model="searchTerm" label="Buscar" placeholder="Perfil, conta ou escopo" tone="light" />
+          <BaseSelect v-model="selectedStatus" label="Status" :options="statusOptions" tone="light" />
+        </FiltersBar>
+
         <div class="table">
           <div class="table__head">
             <span>Perfil</span>
@@ -27,7 +38,7 @@
           </div>
 
           <div class="table__body">
-            <div v-for="item in accessProfiles" :key="`${item.profile}-${item.owner}`" class="table__row">
+            <div v-for="item in filteredProfiles" :key="`${item.profile}-${item.owner}`" class="table__row">
               <span class="table__cell table__cell--title">{{ item.profile }}</span>
               <span class="table__cell">{{ item.owner }}</span>
               <span class="table__cell">{{ item.scope }}</span>
@@ -36,6 +47,8 @@
               </span>
               <span class="table__cell">{{ item.reviewedAt }}</span>
             </div>
+
+            <p v-if="!filteredProfiles.length" class="table__empty">Nenhum perfil encontrado com os filtros atuais.</p>
           </div>
         </div>
       </BaseCard>
@@ -75,10 +88,38 @@
 </template>
 
 <script setup>
+import { computed, ref } from 'vue';
 import BaseCard from '@/components/common/BaseCard.vue';
+import BaseInput from '@/components/common/BaseInput.vue';
+import BaseSelect from '@/components/common/BaseSelect.vue';
+import FiltersBar from '@/components/common/FiltersBar.vue';
 import { getAdminPortalData } from '@/services/portalData';
+import { matchesSearch, uniqueTextOptions } from '@/utils/text';
 
 const { accessSummary, accessProfiles, accessActions, securityRules } = getAdminPortalData();
+const searchTerm = ref('');
+const selectedStatus = ref('');
+
+const statusOptions = computed(() => [
+  { label: 'Todos os status', value: '' },
+  ...uniqueTextOptions(accessProfiles.map((item) => item.status)).map((status) => ({
+    label: status,
+    value: status,
+  })),
+]);
+
+const filteredProfiles = computed(() =>
+  accessProfiles.filter(
+    (item) =>
+      (!selectedStatus.value || item.status === selectedStatus.value) &&
+      matchesSearch([item.profile, item.owner, item.scope, item.status, item.reviewedAt], searchTerm.value),
+  ),
+);
+
+const clearFilters = () => {
+  searchTerm.value = '';
+  selectedStatus.value = '';
+};
 </script>
 
 <style scoped>
@@ -127,6 +168,11 @@ const { accessSummary, accessProfiles, accessActions, securityRules } = getAdmin
 
 .table__row:last-child {
   border-bottom: none;
+}
+
+.table__empty {
+  padding: 18px 22px;
+  color: var(--muted);
 }
 
 .table__cell--title,
@@ -185,4 +231,3 @@ const { accessSummary, accessProfiles, accessActions, securityRules } = getAdmin
   }
 }
 </style>
-

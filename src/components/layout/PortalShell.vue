@@ -16,7 +16,7 @@
             <RouterLink
               v-for="item in group.items"
               :key="item.to"
-              :to="item.to"
+              :to="resolveItemTarget(item)"
               class="sidebar__item"
               :class="{ 'sidebar__item--active': isActive(item.to) }"
             >
@@ -118,6 +118,35 @@ const topbarEyebrow = computed(() => (currentRole.value === 'admin' ? 'Admin' : 
 const homeLink = computed(() => resolveDefaultRoute(currentRole.value));
 
 const isActive = (path) => route.path === path || route.path.startsWith(`${path}/`);
+
+const resolveClientScopeQuery = () => {
+  if (route.name === 'client-works' && typeof route.query.obraFiltro === 'string') {
+    return { obraFiltro: route.query.obraFiltro };
+  }
+
+  if (route.name === 'client-projects' && typeof route.query.projetoFiltro === 'string') {
+    return { projetoFiltro: route.query.projetoFiltro };
+  }
+
+  if (route.name === 'client-attachments') {
+    const query = {};
+
+    if (typeof route.query.obraFiltro === 'string') query.obraFiltro = route.query.obraFiltro;
+    if (typeof route.query.projetoFiltro === 'string') query.projetoFiltro = route.query.projetoFiltro;
+
+    return query;
+  }
+
+  return {};
+};
+
+const resolveItemTarget = (item) => {
+  if (currentRole.value !== 'client') return item.to;
+
+  const query = resolveClientScopeQuery();
+
+  return Object.keys(query).length ? { path: item.to, query } : item.to;
+};
 
 const onSignOut = () => {
   signOut();

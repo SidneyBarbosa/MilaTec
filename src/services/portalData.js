@@ -533,6 +533,55 @@ function enrichAttachment(attachment) {
   return {
     ...attachment,
     ...resolveAttachmentLink(attachment),
+    ...resolveAttachmentScope(attachment),
+  };
+}
+
+function resolveAttachmentScope(attachment) {
+  if (attachment.entityType === 'orcamento') {
+    const relatedProjects = projetos.filter((project) => project.orcamentoId === attachment.entityId);
+    const relatedWorks = unique(relatedProjects.map((project) => project.obraId))
+      .map((workId) => obrasById[workId])
+      .filter(Boolean);
+
+    return {
+      relatedProjectIds: relatedProjects.map((project) => project.id),
+      relatedProjectNames: relatedProjects.map((project) => project.name),
+      relatedWorkIds: relatedWorks.map((work) => work.id),
+      relatedWorkNames: relatedWorks.map((work) => work.name),
+    };
+  }
+
+  if (attachment.entityType === 'projeto') {
+    const relatedProject = projetosById[attachment.entityId];
+    const relatedWork = obrasById[relatedProject?.obraId];
+
+    return {
+      relatedProjectIds: relatedProject?.id ? [relatedProject.id] : [],
+      relatedProjectNames: relatedProject?.name ? [relatedProject.name] : [],
+      relatedWorkIds: relatedWork?.id ? [relatedWork.id] : [],
+      relatedWorkNames: relatedWork?.name ? [relatedWork.name] : [],
+    };
+  }
+
+  if (attachment.entityType === 'entrega') {
+    const relatedDelivery = entregasById[attachment.entityId];
+    const relatedProject = projetosById[relatedDelivery?.projetoId];
+    const relatedWork = obrasById[relatedProject?.obraId];
+
+    return {
+      relatedProjectIds: relatedProject?.id ? [relatedProject.id] : [],
+      relatedProjectNames: relatedProject?.name ? [relatedProject.name] : [],
+      relatedWorkIds: relatedWork?.id ? [relatedWork.id] : [],
+      relatedWorkNames: relatedWork?.name ? [relatedWork.name] : [],
+    };
+  }
+
+  return {
+    relatedProjectIds: [],
+    relatedProjectNames: [],
+    relatedWorkIds: [],
+    relatedWorkNames: [],
   };
 }
 
