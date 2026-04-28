@@ -11,7 +11,7 @@ import { MailService } from './mail.service';
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
-  // Armazenamento temporário de códigos OTP em memória
+  /* Armazenamento temporário de códigos OTP em memória */ 
   private otpStore = new Map<string, { code: string; expiresAt: number }>();
 
   constructor(
@@ -20,21 +20,17 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
-  /**
-   * Gera um código numérico de 6 dígitos.
-   */
+  /* Gera um código numérico de 6 dígitos. */
   private generateOtp(): string {
     return Math.floor(100000 + Math.random() * 900000).toString();
   }
 
-  /**
-   * POST /auth/login
-   * Recebe e-mail, valida contra o Airtable e envia OTP por e-mail.
-   */
+  /* POST /auth/login
+     Recebe e-mail, valida contra o Airtable e envia OTP por e-mail. */
   async login(email: string): Promise<{ message: string }> {
     const normalizedEmail = email.trim().toLowerCase();
 
-    // 1. Verifica se o e-mail existe no Airtable
+    /* Verifica se o e-mail existe no Airtable */ 
     const contact = await this.airtableService.findContactByEmail(
       normalizedEmail,
     );
@@ -45,12 +41,12 @@ export class AuthService {
       );
     }
 
-    // 2. Gera OTP e salva em memória (expira em 10 min)
+    /* Gera OTP e salva em memória (expira em 10 min)*/ 
     const code = this.generateOtp();
     const expiresAt = Date.now() + 10 * 60 * 1000;
     this.otpStore.set(normalizedEmail, { code, expiresAt });
 
-    // 3. Envia por e-mail
+    /* Envia por e-mail */
     await this.mailService.sendOtpEmail(
       normalizedEmail,
       code,
@@ -62,10 +58,8 @@ export class AuthService {
     return { message: 'Código enviado para o e-mail informado.' };
   }
 
-  /**
-   * POST /auth/verify
-   * Valida o código OTP e retorna JWT.
-   */
+  /* POST /auth/verify
+     Valida o código OTP e retorna JWT. */
   async verify(
     email: string,
     code: string,
@@ -88,10 +82,10 @@ export class AuthService {
       throw new UnauthorizedException('Código inválido.');
     }
 
-    // Código validado — remove da memória
+    /* Código validado — remove da memória */
     this.otpStore.delete(normalizedEmail);
 
-    // Gera JWT com o e-mail no payload
+    /* Gera JWT com o e-mail no payload */
     const payload = { email: normalizedEmail };
     const access_token = this.jwtService.sign(payload);
 

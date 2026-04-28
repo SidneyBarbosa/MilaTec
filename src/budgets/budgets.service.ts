@@ -23,7 +23,7 @@ export class BudgetsService {
         email,
       );
 
-      // Busca orçamentos vinculados à empresa (campo "Empresa" é linked record)
+      /* Busca orçamentos vinculados à empresa (campo "Empresa" é linked record) */
       const allBudgets = await this.airtableService.getRecords('Orçamentos');
 
       const companyBudgets = allBudgets.filter((budget) => {
@@ -53,7 +53,7 @@ export class BudgetsService {
         budgetId,
       );
 
-      // Valida se o orçamento pertence à empresa do usuário
+      /* Valida se o orçamento pertence à empresa do usuário */
       const empresaIds = budget['Empresa'];
       if (
         !Array.isArray(empresaIds) ||

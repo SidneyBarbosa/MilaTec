@@ -1,6 +1,6 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 
-/*Decorator para acessar o usuário autenticado na rota.
+/* Decorator para acessar o usuário autenticado na rota.
   Uso: @CurrentUser() user: { email: string }*/
 export const CurrentUser = createParamDecorator(
   (data: unknown, ctx: ExecutionContext) => {

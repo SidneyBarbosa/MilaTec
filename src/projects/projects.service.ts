@@ -22,8 +22,8 @@ export class ProjectsService {
 
       const allProjects = await this.airtableService.getRecords('Projetos');
 
-      // Projetos não são vinculados direto à Empresa — o vínculo vai por Orçamentos.
-      // Buscamos os orçamentos da empresa e usamos seus IDs para filtrar os projetos.
+      /* Projetos não são vinculados direto à Empresa — o vínculo vai por Orçamentos.
+         Buscamos os orçamentos da empresa e usamos seus IDs para filtrar os projetos.*/
       const companyBudgets = await this.airtableService.getRecords('Orçamentos');
       const companyBudgetIds = companyBudgets
         .filter((b) => Array.isArray(b['Empresa']) && b['Empresa'].includes(company.id))
@@ -50,7 +50,7 @@ export class ProjectsService {
       const { company } = await this.companyService.findCompanyByUserEmail(email);
       const project = await this.airtableService.getRecordById('Projetos', projectId);
 
-      // Validação de ownership: projeto precisa estar vinculado a um orçamento da empresa
+      /* Validação de ownership: projeto precisa estar vinculado a um orçamento da empresa */
       const budgetIds = project['Orçamentos'] || [];
       const companyBudgets = await this.airtableService.getRecords('Orçamentos');
       const companyBudgetIds = companyBudgets

@@ -18,7 +18,7 @@ export class CompanyService {
     const normalizedEmail = email.trim().toLowerCase();
 
     try {
-      // 1. Busca o contato completo pelo e-mail
+      /* Busca o contato completo pelo e-mail */
       const contact = await this.airtableService.getRecords(
         'Contatos',
         `LOWER({E-mail}) = "${normalizedEmail}"`,
@@ -32,7 +32,7 @@ export class CompanyService {
 
       const userContact = contact[0];
 
-      // 2. O campo "Empresa" no Airtable é um linked record (array de IDs)
+      /* O campo "Empresa" no Airtable é um linked record (array de IDs) */
       const empresaIds = userContact['Empresa'];
 
       if (!empresaIds || empresaIds.length === 0) {
@@ -41,14 +41,14 @@ export class CompanyService {
         );
       }
 
-      // 3. Busca os dados completos da empresa vinculada
+      /* Busca os dados completos da empresa vinculada */
       const empresaId = empresaIds[0];
       const empresa = await this.airtableService.getRecordById(
         'Empresas',
         empresaId,
       );
 
-      // 4. Retorna o DTO consolidado
+      /* Retorna o DTO consolidado */
       return {
         company: {
           id: empresa.id,

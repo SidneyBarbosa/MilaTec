@@ -1,7 +1,6 @@
 import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
 const Airtable = require('airtable');
 
 @Injectable()
@@ -27,11 +26,9 @@ export class AirtableService implements OnModuleInit {
     this.logger.log('Conexão com Airtable inicializada com sucesso.');
   }
 
-  /**
-   * Busca um contato pelo e-mail na tabela "Contatos".
-   * Usa LOWER() e TRIM() na fórmula para evitar bloqueios por
-   * case sensitivity e espaços invisíveis.
-   */
+  /* Busca um contato pelo e-mail na tabela "Contatos".
+     Usa LOWER() e TRIM() na fórmula para evitar bloqueios por
+     case sensitivity e espaços invisíveis. */
   async findContactByEmail(email: string): Promise<any | null> {
     const normalizedEmail = email.trim().toLowerCase();
 
@@ -61,10 +58,8 @@ export class AirtableService implements OnModuleInit {
     }
   }
 
-  /**
-   * Método genérico para buscar registros em qualquer tabela.
-   * Será usado nos próximos módulos (Orçamentos, Projetos, Entregas).
-   */
+  /* Método genérico para buscar registros em qualquer tabela.
+    Será usado nos próximos módulos (Orçamentos, Projetos, Entregas). */
   async getRecords(
     tableName: string,
     filterFormula?: string,
@@ -91,9 +86,7 @@ export class AirtableService implements OnModuleInit {
     }
   }
 
-  /**
-   * Busca um registro específico pelo ID do Airtable.
-   */
+  /* Busca um registro específico pelo ID do Airtable. */
   async getRecordById(tableName: string, recordId: string): Promise<any> {
     try {
       const record = await this.base(tableName).find(recordId);

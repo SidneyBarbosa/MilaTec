@@ -5,6 +5,7 @@ import { AirtableModule } from './airtable/airtable.module';
 import { CompanyModule } from './company/company.module';
 import { BudgetsModule } from './budgets/budgets.module';
 import { ProjectsModule } from './projects/projects.module';
+import { DeliveriesModule } from './deliveries/deliveries.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { ProjectsModule } from './projects/projects.module';
     CompanyModule,
     BudgetsModule,
     ProjectsModule,
+    DeliveriesModule,
   ],
 })
 export class AppModule {}
