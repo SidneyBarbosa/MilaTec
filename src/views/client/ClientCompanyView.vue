@@ -47,28 +47,13 @@
           </div>
         </template>
 
-        <dl class="details">
-          <div class="details__row">
-            <dt>Nome da empresa</dt>
-            <dd>{{ company.name }}</dd>
-          </div>
-          <div class="details__row">
-            <dt>Cidade e estado</dt>
-            <dd>{{ company.cityState }}</dd>
-          </div>
-          <div class="details__row">
-            <dt>Contato principal vinculado</dt>
-            <dd>{{ company.primaryContact }}</dd>
-          </div>
-          <div class="details__row">
-            <dt>E-mail</dt>
-            <dd>{{ company.primaryEmail }}</dd>
-          </div>
-          <div class="details__row">
-            <dt>Telefone</dt>
-            <dd>{{ company.primaryPhone }}</dd>
-          </div>
-        </dl>
+        <div class="company-info-grid">
+          <article v-for="item in companyDetailCards" :key="item.label" class="company-info-card">
+            <span>{{ item.label }}</span>
+            <strong>{{ item.value }}</strong>
+            <small v-if="item.helper">{{ item.helper }}</small>
+          </article>
+        </div>
       </BaseCard>
 
       <BaseCard>
@@ -127,17 +112,19 @@
           </div>
         </template>
 
-        <div class="work-list">
-          <article v-for="work in workHighlights" :key="work.id" class="work-item">
-            <div>
-              <strong>{{ work.name }}</strong>
-              <p>{{ work.city }} · {{ work.budgetType }}</p>
+        <div class="work-grid">
+          <article v-for="work in workHighlights" :key="work.id" class="content-card content-card--work">
+            <div class="content-card__header">
+              <div>
+                <strong>{{ work.name }}</strong>
+                <p>{{ work.city }} · {{ work.budgetType }}</p>
+              </div>
+              <span class="status-badge status-badge--info">{{ work.stage }}</span>
             </div>
 
-            <div class="work-item__meta">
-              <span class="status-badge status-badge--info">{{ work.stage }}</span>
-              <span>{{ work.linkedProjects.length }} projetos</span>
-              <span>{{ work.linkedDeliveries.length }} entregas</span>
+            <div class="content-card__meta">
+              <span class="info-chip">{{ work.linkedProjects.length }} projetos</span>
+              <span class="info-chip">{{ work.linkedDeliveries.length }} entregas</span>
             </div>
           </article>
 
@@ -153,8 +140,8 @@
           </div>
         </template>
 
-        <div class="timeline-list">
-          <article v-for="delivery in nextDeliveries" :key="delivery.id" class="timeline-item">
+        <div class="timeline-grid">
+          <article v-for="delivery in nextDeliveries" :key="delivery.id" class="content-card content-card--delivery">
             <time>{{ delivery.displayDate }}</time>
             <div>
               <strong>{{ delivery.name }}</strong>
@@ -177,17 +164,19 @@
           </div>
         </template>
 
-        <div class="project-list">
-          <article v-for="project in projectHighlights" :key="project.id" class="project-item">
-            <div>
-              <strong>{{ project.name }}</strong>
-              <p>{{ project.workName }} · {{ project.product }}</p>
+        <div class="project-grid">
+          <article v-for="project in projectHighlights" :key="project.id" class="content-card content-card--project">
+            <div class="content-card__header">
+              <div>
+                <strong>{{ project.name }}</strong>
+                <p>{{ project.workName }} · {{ project.product }}</p>
+              </div>
+              <span class="status-badge status-badge--document">{{ project.stage }}</span>
             </div>
 
-            <div class="project-item__meta">
-              <span class="status-badge status-badge--document">{{ project.stage }}</span>
-              <span>{{ project.quantity }}</span>
-              <span>{{ project.totalValue }}</span>
+            <div class="content-card__meta">
+              <span class="info-chip">{{ project.quantity }}</span>
+              <span class="info-chip">{{ project.totalValue }}</span>
             </div>
           </article>
 
@@ -203,16 +192,18 @@
           </div>
         </template>
 
-        <div class="document-list">
-          <article v-for="attachment in recentAttachments" :key="attachment.id" class="document-item">
-            <div>
-              <strong>{{ attachment.name }}</strong>
-              <p>{{ attachment.linkedTypeLabel }} · {{ attachment.linkedRecordName }}</p>
+        <div class="document-grid">
+          <article v-for="attachment in recentAttachments" :key="attachment.id" class="content-card content-card--document">
+            <div class="content-card__header">
+              <div>
+                <strong>{{ attachment.name }}</strong>
+                <p>{{ attachment.linkedTypeLabel }} · {{ attachment.linkedRecordName }}</p>
+              </div>
+              <span class="info-chip info-chip--blue">{{ attachment.category }}</span>
             </div>
 
-            <div class="document-item__meta">
-              <span>{{ attachment.category }}</span>
-              <time>{{ attachment.uploadedAt }}</time>
+            <div class="content-card__meta">
+              <span class="info-chip">{{ attachment.uploadedAt }}</span>
             </div>
           </article>
 
@@ -276,6 +267,34 @@ const dashboardCards = computed(() => [
     value: currencyFormatter.format(totalProjectValue.value),
     detail: 'Soma dos projetos visíveis para a empresa',
     accent: '#B7791F',
+  },
+]);
+
+const companyDetailCards = computed(() => [
+  {
+    label: 'Nome da empresa',
+    value: company.value.name,
+    helper: 'Conta vinculada ao portal',
+  },
+  {
+    label: 'Cidade e estado',
+    value: company.value.cityState,
+    helper: 'Base operacional principal',
+  },
+  {
+    label: 'Contato principal',
+    value: company.value.primaryContact,
+    helper: 'Responsável cadastrado',
+  },
+  {
+    label: 'E-mail',
+    value: company.value.primaryEmail,
+    helper: 'Canal principal de comunicação',
+  },
+  {
+    label: 'Telefone',
+    value: company.value.primaryPhone,
+    helper: 'Contato validado para atendimento',
   },
 ]);
 
@@ -491,45 +510,56 @@ function summarizeBy(items, getLabel) {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-.details {
-  margin: 0;
-  padding: 0;
+.company-summary-card :deep(.card__body) {
+  gap: 10px;
 }
 
-.details {
+.company-info-grid {
   display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
 }
 
-.details__row {
-  padding-bottom: 12px;
-  border-bottom: 1px solid var(--stroke);
+.company-info-card {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--stroke-soft);
+  border-radius: 14px;
+  background:
+    linear-gradient(180deg, rgba(247, 250, 255, 0.96), rgba(255, 255, 255, 0.98));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.82);
 }
 
-.details__row:last-child {
-  padding-bottom: 0;
-  border-bottom: none;
+.company-info-card span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
 }
 
-.details__row dd {
-  margin: 6px 0 0;
+.company-info-card strong {
   color: var(--text-strong);
-  font-size: 17px;
-  font-weight: 600;
+  font-size: 18px;
+  line-height: 1.35;
   overflow-wrap: anywhere;
 }
 
-.company-summary-card :deep(.card__body) {
-  gap: 10px;
+.company-info-card small {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
 }
 
 .overview-list,
 .overview-group,
 .overview-group__rows,
-.work-list,
-.timeline-list,
-.project-list,
-.document-list {
+.work-grid,
+.timeline-grid,
+.project-grid,
+.document-grid {
   display: grid;
   gap: 12px;
 }
@@ -599,10 +629,7 @@ function summarizeBy(items, getLabel) {
 }
 
 .overview-group header,
-.overview-row div,
-.work-item,
-.project-item,
-.document-item {
+.overview-row div {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -610,24 +637,16 @@ function summarizeBy(items, getLabel) {
 }
 
 .overview-group header span,
-.work-item p,
-.project-item p,
-.document-item p,
-.timeline-item p,
-.timeline-item span,
-.work-item__meta,
-.project-item__meta,
-.document-item__meta {
+.content-card p,
+.content-card span,
+.content-card__meta {
   color: var(--muted);
   font-size: 13px;
 }
 
 .overview-group header strong,
 .overview-row strong,
-.work-item strong,
-.project-item strong,
-.document-item strong,
-.timeline-item strong {
+.content-card strong {
   color: var(--text-strong);
 }
 
@@ -651,50 +670,41 @@ function summarizeBy(items, getLabel) {
   background: linear-gradient(90deg, #004ae8, #00a34a);
 }
 
-.work-item,
-.project-item,
-.document-item,
-.timeline-item {
-  padding: 14px 0;
-  border-bottom: 1px solid var(--stroke-soft);
-}
-
-.work-item:last-child,
-.project-item:last-child,
-.document-item:last-child,
-.timeline-item:last-child {
-  border-bottom: none;
-}
-
-.work-item p,
-.project-item p,
-.document-item p,
-.timeline-item p {
-  margin-top: 4px;
-}
-
-.work-item__meta,
-.project-item__meta,
-.document-item__meta {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 8px;
-  text-align: right;
-}
-
-.project-item__meta,
-.document-item__meta {
-  min-width: 180px;
-}
-
-.timeline-item {
+.content-card {
   display: grid;
-  grid-template-columns: 92px minmax(0, 1fr);
+  gap: 14px;
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--stroke-soft);
+  border-radius: 16px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(246, 249, 255, 0.94));
+  box-shadow: 0 10px 24px rgba(5, 8, 102, 0.06);
+}
+
+.content-card__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
   gap: 14px;
 }
 
-.timeline-item time {
+.content-card__header p {
+  margin-top: 4px;
+}
+
+.content-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.content-card--delivery {
+  grid-template-columns: 104px minmax(0, 1fr);
+  align-items: start;
+}
+
+.content-card--delivery time {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -707,22 +717,29 @@ function summarizeBy(items, getLabel) {
   font-weight: 800;
 }
 
-.timeline-item span {
+.content-card--delivery span {
   display: block;
   margin-top: 6px;
 }
 
-.document-item__meta span {
+.info-chip {
   display: inline-flex;
-  min-height: 30px;
   align-items: center;
+  min-height: 30px;
   padding: 0 10px;
-  border-radius: 8px;
+  border-radius: 999px;
+  color: var(--text-strong);
+  border: 1px solid rgba(5, 8, 102, 0.08);
+  background: rgba(5, 8, 102, 0.04);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.info-chip--blue {
+  display: inline-flex;
   color: #1450c8;
   border: 1px solid rgba(0, 74, 232, 0.16);
   background: rgba(0, 74, 232, 0.08);
-  font-size: 12px;
-  font-weight: 800;
 }
 
 .empty-state {
@@ -749,24 +766,19 @@ function summarizeBy(items, getLabel) {
     grid-template-columns: 1fr;
   }
 
-  .work-item,
-  .project-item,
-  .document-item {
-    display: grid;
-  }
-
-  .work-item__meta,
-  .project-item__meta,
-  .document-item__meta {
-    justify-content: flex-start;
-    text-align: left;
-  }
-
-  .timeline-item {
+  .company-info-grid {
     grid-template-columns: 1fr;
   }
 
-  .timeline-item time {
+  .content-card__header {
+    display: grid;
+  }
+
+  .content-card--delivery {
+    grid-template-columns: 1fr;
+  }
+
+  .content-card--delivery time {
     justify-content: flex-start;
     width: max-content;
     padding: 0 10px;
