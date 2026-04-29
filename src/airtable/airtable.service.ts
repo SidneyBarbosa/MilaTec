@@ -1,6 +1,7 @@
 import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { withRetry } from './retry.util';
+import { RateLimiter } from './rate-limiter.util';
 
 const Airtable = require('airtable');
 
@@ -15,6 +16,13 @@ interface QueryOptions {
 export class AirtableService implements OnModuleInit {
   private readonly logger = new Logger(AirtableService.name);
   private base: any;
+
+  /* Limite oficial do Airtable: 5 req/s por base.
+     Usamos 4 para deixar margem de segurança contra picos. */
+  private readonly rateLimiter = new RateLimiter({
+    maxRequests: 4,
+    windowMs: 1000,
+  });
 
   constructor(private readonly configService: ConfigService) {}
 
@@ -37,61 +45,67 @@ export class AirtableService implements OnModuleInit {
   async findContactByEmail(email: string): Promise<any | null> {
     const normalizedEmail = email.trim().toLowerCase();
 
-    return withRetry(
-      async () => {
-        const records = await this.base('Contatos')
-          .select({
-            filterByFormula: `LOWER({E-mail}) = "${normalizedEmail}"`,
-            maxRecords: 1,
-          })
-          .firstPage();
+    return this.rateLimiter.execute(() =>
+      withRetry(
+        async () => {
+          const records = await this.base('Contatos')
+            .select({
+              filterByFormula: `LOWER({E-mail}) = "${normalizedEmail}"`,
+              maxRecords: 1,
+            })
+            .firstPage();
 
-        if (!records || records.length === 0) {
-          return null;
-        }
+          if (!records || records.length === 0) {
+            return null;
+          }
 
-        const record = records[0];
-        return {
-          id: record.id,
-          email: record.get('E-mail'),
-          nomeCompleto: record.get('Nome completo'),
-        };
-      },
-      `findContactByEmail(${normalizedEmail})`,
+          const record = records[0];
+          return {
+            id: record.id,
+            email: record.get('E-mail'),
+            nomeCompleto: record.get('Nome completo'),
+          };
+        },
+        `findContactByEmail(${normalizedEmail})`,
+      ),
     );
   }
 
   async getRecords(tableName: string, options: QueryOptions = {}): Promise<any[]> {
-    return withRetry(
-      async () => {
-        const selectOptions: any = {};
+    return this.rateLimiter.execute(() =>
+      withRetry(
+        async () => {
+          const selectOptions: any = {};
 
-        if (options.filterByFormula) selectOptions.filterByFormula = options.filterByFormula;
-        if (options.fields?.length) selectOptions.fields = options.fields;
-        if (options.maxRecords) selectOptions.maxRecords = options.maxRecords;
-        if (options.sort) selectOptions.sort = options.sort;
+          if (options.filterByFormula) selectOptions.filterByFormula = options.filterByFormula;
+          if (options.fields?.length) selectOptions.fields = options.fields;
+          if (options.maxRecords) selectOptions.maxRecords = options.maxRecords;
+          if (options.sort) selectOptions.sort = options.sort;
 
-        const records = await this.base(tableName).select(selectOptions).all();
+          const records = await this.base(tableName).select(selectOptions).all();
 
-        return records.map((record: any) => ({
-          id: record.id,
-          ...record.fields,
-        }));
-      },
-      `getRecords(${tableName})`,
+          return records.map((record: any) => ({
+            id: record.id,
+            ...record.fields,
+          }));
+        },
+        `getRecords(${tableName})`,
+      ),
     );
   }
 
   async getRecordById(tableName: string, recordId: string): Promise<any> {
-    return withRetry(
-      async () => {
-        const record = await this.base(tableName).find(recordId);
-        return {
-          id: record.id,
-          ...record.fields,
-        };
-      },
-      `getRecordById(${tableName}, ${recordId})`,
+    return this.rateLimiter.execute(() =>
+      withRetry(
+        async () => {
+          const record = await this.base(tableName).find(recordId);
+          return {
+            id: record.id,
+            ...record.fields,
+          };
+        },
+        `getRecordById(${tableName}, ${recordId})`,
+      ),
     );
   }
 
