@@ -849,29 +849,103 @@ function buildAdminPortalData() {
     };
   });
 
-  const adminWorks = obras.map((work) => ({
-    client: empresasById[work.empresaId]?.name || 'Empresa não vinculada',
-    name: work.name,
-    city: work.city,
-    stage: work.stage,
-  }));
+  const adminAttachmentsByEntity = groupAttachmentsByEntity(anexos);
+  const getAdminEntityAttachments = (entityType, entityId) => adminAttachmentsByEntity[`${entityType}:${entityId}`] || [];
+
+  const adminWorks = obras.map((work) => {
+    const company = empresasById[work.empresaId];
+    const primaryContact = resolveContact(work.empresaId);
+    const linkedProjects = projetos
+      .filter((project) => project.obraId === work.id)
+      .map((project) => {
+        const budget = orcamentosById[project.orcamentoId];
+        const projectAttachments = getAdminEntityAttachments('projeto', project.id);
+
+        return {
+          id: project.id,
+          name: project.name,
+          product: project.product,
+          type: project.type,
+          budgetType: budget?.budgetType || 'Tipo não informado',
+          stage: project.stage,
+          quantity: project.quantity,
+          totalValue: project.totalValue,
+          registrationAttachment:
+            findAttachmentByCategory(projectAttachments, ['Registro de obra', 'Fotos da obra']) || null,
+        };
+      });
+    const linkedProjectIds = new Set(linkedProjects.map((project) => project.id));
+    const linkedDeliveries = entregas
+      .filter((delivery) => linkedProjectIds.has(delivery.projetoId))
+      .map((delivery) => {
+        const deliveryAttachments = getAdminEntityAttachments('entrega', delivery.id);
+
+        return {
+          id: delivery.id,
+          name: delivery.name,
+          deliveryAddress: delivery.deliveryAddress || `${work.city}, ${company?.state || ''}`.trim(),
+          stage: delivery.stage,
+          invoiceDate: delivery.invoiceDate || 'A faturar',
+          quantity: delivery.quantity,
+          value: delivery.value,
+          purchaseOrderAttachment: findAttachmentByCategory(deliveryAttachments, 'Pedido de compra'),
+        };
+      });
+    const totalValue = linkedProjects.reduce((sum, project) => sum + parseCurrency(project.totalValue), 0);
+    const budgetTypes = unique(
+      linkedProjects.map((project) => project.budgetType).filter(Boolean),
+    );
+
+    return {
+      id: work.id,
+      client: company?.name || 'Empresa não vinculada',
+      clientCityState: company ? `${company.city}, ${company.state}` : 'Local não informado',
+      primaryContact: primaryContact?.name || 'Contato não informado',
+      primaryEmail: primaryContact?.email || 'E-mail não informado',
+      primaryPhone: primaryContact?.phone || 'Telefone não informado',
+      name: work.name,
+      city: work.city,
+      stage: work.stage,
+      projectCount: linkedProjects.length,
+      deliveryCount: linkedDeliveries.length,
+      budgetTypes,
+      quantity: joinOrFallback(linkedProjects.map((project) => project.quantity), 'Sem quantidade informada'),
+      value: formatCurrency(totalValue),
+      totalValue: formatCurrency(totalValue),
+      linkedProjects,
+      linkedDeliveries,
+    };
+  });
 
   const adminProjects = projetos.map((project) => {
     const company = resolveProjectCompany(project);
     const work = obrasById[project.obraId];
     const budget = orcamentosById[project.orcamentoId];
+    const projectAttachments = getAdminEntityAttachments('projeto', project.id);
 
     return {
+      id: project.id,
       client: company?.name || 'Empresa não vinculada',
       name: project.name,
       location: project.location,
+      product: project.product,
       type: project.type,
       stage: project.stage,
       quantity: project.quantity,
       unitValue: project.unitValue,
       totalValue: project.totalValue,
+      workId: work?.id || '',
       workName: work?.name || 'Obra não vinculada',
+      workCity: work?.city || 'Cidade não informada',
+      budgetName: budget?.name || 'Orçamento não vinculado',
+      budgetStatus: budget?.status || 'Status não informado',
       budgetType: budget?.budgetType || 'Tipo não informado',
+      attachments: projectAttachments,
+      preProjectAttachment: findAttachmentByCategory(projectAttachments, ['Pré-projeto', 'Pre-projeto']),
+      approvalAttachment: findAttachmentByCategory(projectAttachments, ['Projeto aprovação', 'Projeto para aprovação']),
+      executiveAttachment: findAttachmentByCategory(projectAttachments, 'Projeto executivo'),
+      registrationAttachment:
+        findAttachmentByCategory(projectAttachments, ['Registro de obra', 'Fotos da obra']) || null,
     };
   });
 
