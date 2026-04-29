@@ -18,26 +18,21 @@ export class ProjectsService {
 
   async findAllByUserEmail(email: string) {
     try {
-      const { company } = await this.companyService.findCompanyByUserEmail(email);
+      const { budgetIds } = await this.companyService.getCompanyBudgetIds(email);
 
-      const allProjects = await this.airtableService.getRecords('Projetos');
+      if (budgetIds.length === 0) return [];
 
-      /* Projetos não são vinculados direto à Empresa — o vínculo vai por Orçamentos.
-         Buscamos os orçamentos da empresa e usamos seus IDs para filtrar os projetos.*/
-      const companyBudgets = await this.airtableService.getRecords('Orçamentos');
-      const companyBudgetIds = companyBudgets
-        .filter((b) => Array.isArray(b['Empresa']) && b['Empresa'].includes(company.id))
-        .map((b) => b.id);
+      /* Busca direta no Airtable: apenas projetos vinculados aos orçamentos da empresa */
+      const formula = this.airtableService.buildLinkedRecordFilter(
+        'Orçamentos',
+        budgetIds,
+      );
 
-      const companyProjects = allProjects.filter((project) => {
-        const budgetIds = project['Orçamentos'];
-        return (
-          Array.isArray(budgetIds) &&
-          budgetIds.some((id) => companyBudgetIds.includes(id))
-        );
+      const projects = await this.airtableService.getRecords('Projetos', {
+        filterByFormula: formula,
       });
 
-      return companyProjects.map((project) => this.mapProject(project));
+      return projects.map((project) => this.mapProject(project));
     } catch (error) {
       if (error instanceof NotFoundException) throw error;
       this.logger.error(`Erro ao listar projetos: ${error.message}`);
@@ -47,19 +42,16 @@ export class ProjectsService {
 
   async findOneByUserEmail(email: string, projectId: string) {
     try {
-      const { company } = await this.companyService.findCompanyByUserEmail(email);
+      const { budgetIds } = await this.companyService.getCompanyBudgetIds(email);
       const project = await this.airtableService.getRecordById('Projetos', projectId);
 
-      /* Validação de ownership: projeto precisa estar vinculado a um orçamento da empresa */
-      const budgetIds = project['Orçamentos'] || [];
-      const companyBudgets = await this.airtableService.getRecords('Orçamentos');
-      const companyBudgetIds = companyBudgets
-        .filter((b) => Array.isArray(b['Empresa']) && b['Empresa'].includes(company.id))
-        .map((b) => b.id);
+      const projectBudgetIds = project['Orçamentos'] || [];
+      const belongsToCompany = projectBudgetIds.some((id) => budgetIds.includes(id));
 
-      const belongsToCompany = budgetIds.some((id) => companyBudgetIds.includes(id));
       if (!belongsToCompany) {
-        throw new NotFoundException('Projeto não encontrado ou não pertence à sua empresa.');
+        throw new NotFoundException(
+          'Projeto não encontrado ou não pertence à sua empresa.',
+        );
       }
 
       return this.mapProject(project);

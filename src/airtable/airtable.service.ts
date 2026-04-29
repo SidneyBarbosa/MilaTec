@@ -3,6 +3,13 @@ import { ConfigService } from '@nestjs/config';
 
 const Airtable = require('airtable');
 
+interface QueryOptions {
+  filterByFormula?: string;
+  fields?: string[];
+  maxRecords?: number;
+  sort?: { field: string; direction?: 'asc' | 'desc' }[];
+}
+
 @Injectable()
 export class AirtableService implements OnModuleInit {
   private readonly logger = new Logger(AirtableService.name);
@@ -27,8 +34,7 @@ export class AirtableService implements OnModuleInit {
   }
 
   /* Busca um contato pelo e-mail na tabela "Contatos".
-     Usa LOWER() e TRIM() na fórmula para evitar bloqueios por
-     case sensitivity e espaços invisíveis. */
+     Usa LOWER() na fórmula para evitar bloqueios por case sensitivity. */
   async findContactByEmail(email: string): Promise<any | null> {
     const normalizedEmail = email.trim().toLowerCase();
 
@@ -51,28 +57,31 @@ export class AirtableService implements OnModuleInit {
         nomeCompleto: record.get('Nome completo'),
       };
     } catch (error) {
-      this.logger.error(
-        `Erro ao buscar contato no Airtable: ${error.message}`,
-      );
+      this.logger.error(`Erro ao buscar contato no Airtable: ${error.message}`);
       throw error;
     }
   }
 
-  /* Método genérico para buscar registros em qualquer tabela.
-    Será usado nos próximos módulos (Orçamentos, Projetos, Entregas). */
-  async getRecords(
-    tableName: string,
-    filterFormula?: string,
-  ): Promise<any[]> {
+  /* Busca registros de uma tabela com opções avançadas.
+     Aceita fórmulas, seleção de campos, ordenação e limite. */
+  async getRecords(tableName: string, options: QueryOptions = {}): Promise<any[]> {
     try {
       const selectOptions: any = {};
-      if (filterFormula) {
-        selectOptions.filterByFormula = filterFormula;
+
+      if (options.filterByFormula) {
+        selectOptions.filterByFormula = options.filterByFormula;
+      }
+      if (options.fields && options.fields.length > 0) {
+        selectOptions.fields = options.fields;
+      }
+      if (options.maxRecords) {
+        selectOptions.maxRecords = options.maxRecords;
+      }
+      if (options.sort) {
+        selectOptions.sort = options.sort;
       }
 
-      const records = await this.base(tableName)
-        .select(selectOptions)
-        .all();
+      const records = await this.base(tableName).select(selectOptions).all();
 
       return records.map((record: any) => ({
         id: record.id,
@@ -86,7 +95,7 @@ export class AirtableService implements OnModuleInit {
     }
   }
 
-  /* Busca um registro específico pelo ID do Airtable. */
+  /* Busca um registro específico pelo ID. */
   async getRecordById(tableName: string, recordId: string): Promise<any> {
     try {
       const record = await this.base(tableName).find(recordId);
@@ -100,5 +109,26 @@ export class AirtableService implements OnModuleInit {
       );
       throw error;
     }
+  }
+
+  /* Helper para buscar registros vinculados a um conjunto de IDs.
+     Útil para filtrar por linked records (ex: orçamentos vinculados a uma empresa).
+     Como o Airtable não suporta filtrar diretamente por record IDs em linked fields,
+     usamos a função SEARCH() na representação textual do campo. */
+  buildLinkedRecordFilter(fieldName: string, names: string[]): string {
+    if (!names || names.length === 0) return 'FALSE()';
+
+    const conditions = names.map(
+      (name) => `SEARCH("${this.escapeString(name)}", ARRAYJOIN({${fieldName}}))`,
+    );
+
+    return conditions.length === 1
+      ? conditions[0]
+      : `OR(${conditions.join(', ')})`;
+  }
+
+  /* Escapa aspas em strings para uso seguro em fórmulas do Airtable. */
+  private escapeString(str: string): string {
+    return str.replace(/"/g, '\\"');
   }
 }

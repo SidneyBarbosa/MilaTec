@@ -18,26 +18,20 @@ export class DeliveriesService {
 
   async findAllByUserEmail(email: string) {
     try {
-      const { company } = await this.companyService.findCompanyByUserEmail(email);
+      const { budgetIds } = await this.companyService.getCompanyBudgetIds(email);
 
-      /* Entregas se vinculam à empresa via Orçamentos.
-         Primeiro pegamos os IDs dos orçamentos da empresa. */
-      const companyBudgets = await this.airtableService.getRecords('Orçamentos');
-      const companyBudgetIds = companyBudgets
-        .filter((b) => Array.isArray(b['Empresa']) && b['Empresa'].includes(company.id))
-        .map((b) => b.id);
+      if (budgetIds.length === 0) return [];
 
-      /* Depois filtramos as entregas que pertencem a esses orçamentos. */
-      const allDeliveries = await this.airtableService.getRecords('Entregas');
-      const companyDeliveries = allDeliveries.filter((delivery) => {
-        const budgetIds = delivery['Orçamentos'];
-        return (
-          Array.isArray(budgetIds) &&
-          budgetIds.some((id) => companyBudgetIds.includes(id))
-        );
+      const formula = this.airtableService.buildLinkedRecordFilter(
+        'Orçamentos',
+        budgetIds,
+      );
+
+      const deliveries = await this.airtableService.getRecords('Entregas', {
+        filterByFormula: formula,
       });
 
-      return companyDeliveries.map((delivery) => this.mapDelivery(delivery));
+      return deliveries.map((delivery) => this.mapDelivery(delivery));
     } catch (error) {
       if (error instanceof NotFoundException) throw error;
       this.logger.error(`Erro ao listar entregas: ${error.message}`);
@@ -47,19 +41,16 @@ export class DeliveriesService {
 
   async findOneByUserEmail(email: string, deliveryId: string) {
     try {
-      const { company } = await this.companyService.findCompanyByUserEmail(email);
+      const { budgetIds } = await this.companyService.getCompanyBudgetIds(email);
       const delivery = await this.airtableService.getRecordById('Entregas', deliveryId);
 
-      /* Validação de ownership: a entrega precisa pertencer a um orçamento da empresa */
-      const budgetIds = delivery['Orçamentos'] || [];
-      const companyBudgets = await this.airtableService.getRecords('Orçamentos');
-      const companyBudgetIds = companyBudgets
-        .filter((b) => Array.isArray(b['Empresa']) && b['Empresa'].includes(company.id))
-        .map((b) => b.id);
+      const deliveryBudgetIds = delivery['Orçamentos'] || [];
+      const belongsToCompany = deliveryBudgetIds.some((id) => budgetIds.includes(id));
 
-      const belongsToCompany = budgetIds.some((id) => companyBudgetIds.includes(id));
       if (!belongsToCompany) {
-        throw new NotFoundException('Entrega não encontrada ou não pertence à sua empresa.');
+        throw new NotFoundException(
+          'Entrega não encontrada ou não pertence à sua empresa.',
+        );
       }
 
       return this.mapDelivery(delivery);

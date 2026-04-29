@@ -13,42 +13,33 @@ export class CompanyService {
   constructor(private readonly airtableService: AirtableService) {}
 
   /* Busca a empresa vinculada ao e-mail autenticado.
-     Fluxo: Contatos (filtro por e-mail) -> Empresa (linked record) -> dados completos */
+     Fluxo: Contatos -> Empresa (linked record) -> dados completos. */
   async findCompanyByUserEmail(email: string) {
     const normalizedEmail = email.trim().toLowerCase();
 
     try {
-      /* Busca o contato completo pelo e-mail */
-      const contact = await this.airtableService.getRecords(
-        'Contatos',
-        `LOWER({E-mail}) = "${normalizedEmail}"`,
-      );
+      /* Filtro nativo do Airtable: já retorna apenas o contato do e-mail informado */
+      const contacts = await this.airtableService.getRecords('Contatos', {
+        filterByFormula: `LOWER({E-mail}) = "${normalizedEmail}"`,
+        maxRecords: 1,
+      });
 
-      if (!contact || contact.length === 0) {
-        throw new NotFoundException(
-          'Contato não encontrado na base MilaTec.',
-        );
+      if (!contacts || contacts.length === 0) {
+        throw new NotFoundException('Contato não encontrado na base MilaTec.');
       }
 
-      const userContact = contact[0];
-
-      /* O campo "Empresa" no Airtable é um linked record (array de IDs) */
+      const userContact = contacts[0];
       const empresaIds = userContact['Empresa'];
 
       if (!empresaIds || empresaIds.length === 0) {
-        throw new NotFoundException(
-          'Este contato não possui empresa vinculada.',
-        );
+        throw new NotFoundException('Este contato não possui empresa vinculada.');
       }
 
-      /* Busca os dados completos da empresa vinculada */
-      const empresaId = empresaIds[0];
       const empresa = await this.airtableService.getRecordById(
         'Empresas',
-        empresaId,
+        empresaIds[0],
       );
 
-      /* Retorna o DTO consolidado */
       return {
         company: {
           id: empresa.id,
@@ -72,5 +63,42 @@ export class CompanyService {
         'Erro ao buscar dados da empresa. Tente novamente.',
       );
     }
+  }
+
+  /* Helper compartilhado: retorna os IDs e nome da empresa do usuário.
+     Usado pelos demais módulos para filtrar registros vinculados. */
+  async getCompanyContext(email: string) {
+    const { company } = await this.findCompanyByUserEmail(email);
+    return {
+      companyId: company.id,
+      companyName: company.name,
+    };
+  }
+
+  /* Helper compartilhado: retorna os IDs dos orçamentos da empresa do usuário.
+     Centraliza a lógica usada em projects, deliveries, installations e documents. */
+  async getCompanyBudgetIds(email: string): Promise<{
+    companyId: string;
+    companyName: string;
+    budgetIds: string[];
+  }> {
+    const { companyId, companyName } = await this.getCompanyContext(email);
+
+    /* Filtro nativo: traz apenas os orçamentos da empresa, não a base inteira */
+    const formula = this.airtableService.buildLinkedRecordFilter(
+      'Empresa',
+      [companyName],
+    );
+
+    const budgets = await this.airtableService.getRecords('Orçamentos', {
+      filterByFormula: formula,
+      fields: ['Empresa'], /* só precisamos dos IDs */
+    });
+
+    return {
+      companyId,
+      companyName,
+      budgetIds: budgets.map((b) => b.id),
+    };
   }
 }
