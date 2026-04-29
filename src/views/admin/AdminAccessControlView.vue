@@ -11,7 +11,7 @@
     <section class="access-layout">
       <BaseCard class="table-card">
         <template #header>
-          <div>
+          <div class="table-card__header">
             <p class="pill">Revisão de escopos</p>
             <h3>Perfis monitorados</h3>
           </div>
@@ -52,22 +52,6 @@
           </div>
         </div>
       </BaseCard>
-
-      <BaseCard>
-        <template #header>
-          <div>
-            <p class="pill">Fila operacional</p>
-            <h3>Acoes prioritarias</h3>
-          </div>
-        </template>
-
-        <ul class="action-list">
-          <li v-for="action in accessActions" :key="action.title">
-            <strong>{{ action.title }}</strong>
-            <p>{{ action.detail }}</p>
-          </li>
-        </ul>
-      </BaseCard>
     </section>
 
     <BaseCard>
@@ -96,7 +80,7 @@ import FiltersBar from '@/components/common/FiltersBar.vue';
 import { getAdminPortalData } from '@/services/portalData';
 import { matchesSearch, uniqueTextOptions } from '@/utils/text';
 
-const { accessSummary, accessProfiles, accessActions, securityRules } = getAdminPortalData();
+const { accessSummary, accessProfiles, securityRules } = getAdminPortalData();
 const searchTerm = ref('');
 const selectedStatus = ref('');
 
@@ -130,13 +114,25 @@ const clearFilters = () => {
 }
 
 .access-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1.45fr) minmax(280px, 0.75fr);
-  gap: var(--space-5);
+  display: block;
 }
 
 .table-card {
   padding: 0;
+}
+
+.table-card__header {
+  display: grid;
+  gap: 8px;
+}
+
+.table-card :deep(.card__header) {
+  padding: 22px 22px 0;
+}
+
+.table-card :deep(.card__body) {
+  gap: 18px;
+  padding: 0 22px 22px;
 }
 
 .table {
@@ -176,7 +172,7 @@ const clearFilters = () => {
 }
 
 .table__cell--title,
-.action-list strong {
+.rules strong {
   color: var(--text-strong);
 }
 
@@ -184,7 +180,6 @@ const clearFilters = () => {
   font-weight: 600;
 }
 
-.action-list,
 .rules {
   list-style: none;
   padding: 0;
@@ -193,17 +188,11 @@ const clearFilters = () => {
   gap: 12px;
 }
 
-.action-list li,
 .rules li {
-  padding-left: 18px;
   position: relative;
+  padding-left: 18px;
 }
 
-.action-list p {
-  margin-top: 6px;
-}
-
-.action-list li::before,
 .rules li::before {
   content: '';
   position: absolute;
@@ -215,12 +204,6 @@ const clearFilters = () => {
   background: var(--accent);
 }
 
-@media (max-width: 1080px) {
-  .access-layout {
-    grid-template-columns: 1fr;
-  }
-}
-
 @media (max-width: 980px) {
   .table__head {
     display: none;
@@ -228,6 +211,12 @@ const clearFilters = () => {
 
   .table__row {
     grid-template-columns: 1fr;
+  }
+
+  .table-card :deep(.card__header),
+  .table-card :deep(.card__body) {
+    padding-left: 16px;
+    padding-right: 16px;
   }
 }
 </style>

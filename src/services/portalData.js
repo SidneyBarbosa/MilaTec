@@ -837,7 +837,7 @@ function resolveAttachmentCompany(attachment) {
 }
 
 function buildAdminPortalData() {
-  const customers = empresas.map((empresa) => {
+  const customerRows = empresas.map((empresa) => {
     const primaryContact = resolveContact(empresa.id);
 
     return {
@@ -955,8 +955,10 @@ function buildAdminPortalData() {
     const work = project ? obrasById[project.obraId] : null;
 
     return {
+      id: delivery.id,
       client: company?.name || 'Empresa não vinculada',
       name: delivery.name,
+      projectName: project?.name || 'Projeto nÃ£o vinculado',
       date: delivery.date || 'Sem data',
       invoiceDate: delivery.invoiceDate || 'A faturar',
       quantity: delivery.quantity,
@@ -978,6 +980,34 @@ function buildAdminPortalData() {
       client: company?.name || 'Empresa não vinculada',
       visibility: 'Cliente e administração',
       actionLabel: attachment.actionLabel === 'Visualizar' ? 'Abrir' : attachment.actionLabel,
+    };
+  });
+
+  const customers = customerRows.map((customer) => {
+    const companyRecord = empresas.find((empresa) => empresa.name === customer.company);
+    const primaryContact = companyRecord ? resolveContact(companyRecord.id) : null;
+    const linkedWorks = adminWorks.filter((work) => work.client === customer.company);
+    const linkedProjects = adminProjects.filter((project) => project.client === customer.company);
+    const linkedDeliveries = adminDeliveries.filter((delivery) => delivery.client === customer.company);
+    const linkedAttachments = adminAttachments.filter((attachment) => attachment.client === customer.company);
+    const totalProjectValue = linkedProjects.reduce((sum, project) => sum + parseCurrency(project.totalValue), 0);
+
+    return {
+      id: companyRecord?.id || customer.company,
+      company: customer.company,
+      cityState: customer.cityState,
+      primaryContact: customer.primaryContact,
+      email: customer.email,
+      phone: primaryContact?.phone || '-',
+      workCount: linkedWorks.length,
+      projectCount: linkedProjects.length,
+      deliveryCount: linkedDeliveries.length,
+      attachmentCount: linkedAttachments.length,
+      totalProjectValue: formatCurrency(totalProjectValue),
+      linkedWorks,
+      linkedProjects,
+      linkedDeliveries,
+      linkedAttachments,
     };
   });
 
