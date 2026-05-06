@@ -1,217 +1,227 @@
 ﻿<template>
   <div class="page page--wide">
-    <section class="company-hero">
-      <div class="company-hero__copy">
-        <p class="pill">Empresa</p>
-        <h3>{{ company.name }}</h3>
-        <p>
-          Painel somente leitura para acompanhar obras, projetos, entregas e documentos liberados
-          para esta empresa.
-        </p>
-      </div>
+    <div v-if="isLoading" class="page-status page-status--loading">
+      <span class="loader" aria-hidden="true"></span>
+      <p>Carregando dados da sua empresa...</p>
+    </div>
 
-      <dl class="company-hero__details" aria-label="Dados principais da empresa">
-        <div>
-          <dt>Cidade e estado</dt>
-          <dd>{{ company.cityState }}</dd>
-        </div>
-        <div>
-          <dt>Contato principal</dt>
-          <dd>{{ company.primaryContact }}</dd>
-        </div>
-        <div>
-          <dt>E-mail</dt>
-          <dd>{{ company.primaryEmail }}</dd>
-        </div>
-        <div>
-          <dt>Telefone</dt>
-          <dd>{{ company.primaryPhone }}</dd>
-        </div>
-      </dl>
-    </section>
+    <div v-else-if="error" class="page-status page-status--error">
+      <p>{{ error }}</p>
+    </div>
 
-    <section class="metric-grid" aria-label="Resumo da empresa">
-      <BaseCard v-for="card in dashboardCards" :key="card.label" class="metric-card">
-        <p class="pill">{{ card.label }}</p>
-        <strong class="metric-card__value" :style="{ color: card.accent }">{{ card.value }}</strong>
-        <p>{{ card.detail }}</p>
-      </BaseCard>
-    </section>
+    <template v-else>
+      <section class="company-hero">
+        <div class="company-hero__copy">
+          <p class="pill">Empresa</p>
+          <h3>{{ company.name }}</h3>
+          <p>
+            Painel somente leitura para acompanhar obras, projetos, entregas e documentos liberados
+            para esta empresa.
+          </p>
+        </div>
 
-    <section class="dashboard-grid">
-      <BaseCard class="company-summary-card">
-        <template #header>
-          <div class="section-heading">
-            <p class="pill">Empresa</p>
-            <h3>Dados principais</h3>
+        <dl class="company-hero__details" aria-label="Dados principais da empresa">
+          <div>
+            <dt>Cidade e estado</dt>
+            <dd>{{ company.cityState }}</dd>
           </div>
-        </template>
-
-        <div class="company-info-grid">
-          <article v-for="item in companyDetailCards" :key="item.label" class="company-info-card">
-            <span>{{ item.label }}</span>
-            <strong>{{ item.value }}</strong>
-            <small v-if="item.helper">{{ item.helper }}</small>
-          </article>
-        </div>
-      </BaseCard>
-
-      <BaseCard>
-        <template #header>
-          <div class="section-heading">
-            <p class="pill">Acompanhamento</p>
-            <h3>Resumo operacional</h3>
+          <div>
+            <dt>Contato principal</dt>
+            <dd>{{ company.primaryContact }}</dd>
           </div>
-        </template>
+          <div>
+            <dt>E-mail</dt>
+            <dd>{{ company.primaryEmail }}</dd>
+          </div>
+          <div>
+            <dt>Telefone</dt>
+            <dd>{{ company.primaryPhone }}</dd>
+          </div>
+        </dl>
+      </section>
 
-        <div
-          class="expandable-panel expandable-panel--overview"
-          :class="{ 'expandable-panel--expanded': isOverviewExpanded }"
-        >
-          <div class="overview-list">
-            <section v-for="group in operationalOverview" :key="group.label" class="overview-group">
-              <header>
-                <span>{{ group.label }}</span>
-                <strong>{{ group.total }}</strong>
-              </header>
+      <section class="metric-grid" aria-label="Resumo da empresa">
+        <BaseCard v-for="card in dashboardCards" :key="card.label" class="metric-card">
+          <p class="pill">{{ card.label }}</p>
+          <strong class="metric-card__value" :style="{ color: card.accent }">{{ card.value }}</strong>
+          <p>{{ card.detail }}</p>
+        </BaseCard>
+      </section>
 
-              <div v-if="group.rows.length" class="overview-group__rows">
-                <div v-for="row in group.rows" :key="`${group.label}-${row.label}`" class="overview-row">
-                  <div>
-                    <span>{{ row.label }}</span>
-                    <strong>{{ row.count }}</strong>
+      <section class="dashboard-grid">
+        <BaseCard class="company-summary-card">
+          <template #header>
+            <div class="section-heading">
+              <p class="pill">Empresa</p>
+              <h3>Dados principais</h3>
+            </div>
+          </template>
+
+          <div class="company-info-grid">
+            <article v-for="item in companyDetailCards" :key="item.label" class="company-info-card">
+              <span>{{ item.label }}</span>
+              <strong>{{ item.value }}</strong>
+              <small v-if="item.helper">{{ item.helper }}</small>
+            </article>
+          </div>
+        </BaseCard>
+
+        <BaseCard>
+          <template #header>
+            <div class="section-heading">
+              <p class="pill">Acompanhamento</p>
+              <h3>Resumo operacional</h3>
+            </div>
+          </template>
+
+          <div
+            class="expandable-panel expandable-panel--overview"
+            :class="{ 'expandable-panel--expanded': isOverviewExpanded }"
+          >
+            <div class="overview-list">
+              <section v-for="group in operationalOverview" :key="group.label" class="overview-group">
+                <header>
+                  <span>{{ group.label }}</span>
+                  <strong>{{ group.total }}</strong>
+                </header>
+
+                <div v-if="group.rows.length" class="overview-group__rows">
+                  <div v-for="row in group.rows" :key="`${group.label}-${row.label}`" class="overview-row">
+                    <div>
+                      <span>{{ row.label }}</span>
+                      <strong>{{ row.count }}</strong>
+                    </div>
+                    <span class="overview-row__bar" aria-hidden="true">
+                      <span :style="{ width: `${row.percentage}%` }" />
+                    </span>
                   </div>
-                  <span class="overview-row__bar" aria-hidden="true">
-                    <span :style="{ width: `${row.percentage}%` }" />
-                  </span>
                 </div>
+
+                <p v-else class="empty-state">Nenhum registro disponível.</p>
+              </section>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            class="card-toggle"
+            :aria-expanded="isOverviewExpanded"
+            @click="isOverviewExpanded = !isOverviewExpanded"
+          >
+            {{ isOverviewExpanded ? 'Mostrar menos' : 'Ler mais' }}
+          </button>
+        </BaseCard>
+      </section>
+
+      <section class="dashboard-columns">
+        <BaseCard>
+          <template #header>
+            <div class="section-heading">
+              <p class="pill">Obras</p>
+              <h3>Obras em acompanhamento</h3>
+            </div>
+          </template>
+
+          <div class="work-grid">
+            <article v-for="work in workHighlights" :key="work.id" class="content-card content-card--work">
+              <div class="content-card__header">
+                <div>
+                  <strong>{{ work.name }}</strong>
+                  <p>{{ work.city }} · {{ work.budgetType }}</p>
+                </div>
+                <span class="status-badge status-badge--info">{{ work.stage }}</span>
               </div>
 
-              <p v-else class="empty-state">Nenhum registro disponível.</p>
-            </section>
+              <div class="content-card__meta">
+                <span class="info-chip">{{ work.linkedProjects.length }} projetos</span>
+                <span class="info-chip">{{ work.linkedDeliveries.length }} entregas</span>
+              </div>
+            </article>
+
+            <p v-if="!workHighlights.length" class="empty-state">Nenhuma obra liberada para esta empresa.</p>
           </div>
-        </div>
+        </BaseCard>
 
-        <button
-          type="button"
-          class="card-toggle"
-          :aria-expanded="isOverviewExpanded"
-          @click="isOverviewExpanded = !isOverviewExpanded"
-        >
-          {{ isOverviewExpanded ? 'Mostrar menos' : 'Ler mais' }}
-        </button>
-      </BaseCard>
-    </section>
+        <BaseCard>
+          <template #header>
+            <div class="section-heading">
+              <p class="pill">Entregas</p>
+              <h3>Próximas entregas</h3>
+            </div>
+          </template>
 
-    <section class="dashboard-columns">
-      <BaseCard>
-        <template #header>
-          <div class="section-heading">
-            <p class="pill">Obras</p>
-            <h3>Obras em acompanhamento</h3>
-          </div>
-        </template>
-
-        <div class="work-grid">
-          <article v-for="work in workHighlights" :key="work.id" class="content-card content-card--work">
-            <div class="content-card__header">
+          <div class="timeline-grid">
+            <article v-for="delivery in nextDeliveries" :key="delivery.id" class="content-card content-card--delivery">
+              <time>{{ delivery.displayDate }}</time>
               <div>
-                <strong>{{ work.name }}</strong>
-                <p>{{ work.city }} · {{ work.budgetType }}</p>
+                <strong>{{ delivery.name }}</strong>
+                <p>{{ delivery.workName }} · {{ delivery.quantity }}</p>
+                <span>{{ delivery.deliveryAddress }}</span>
               </div>
-              <span class="status-badge status-badge--info">{{ work.stage }}</span>
-            </div>
+            </article>
 
-            <div class="content-card__meta">
-              <span class="info-chip">{{ work.linkedProjects.length }} projetos</span>
-              <span class="info-chip">{{ work.linkedDeliveries.length }} entregas</span>
-            </div>
-          </article>
-
-          <p v-if="!workHighlights.length" class="empty-state">Nenhuma obra liberada para esta empresa.</p>
-        </div>
-      </BaseCard>
-
-      <BaseCard>
-        <template #header>
-          <div class="section-heading">
-            <p class="pill">Entregas</p>
-            <h3>Próximas entregas</h3>
+            <p v-if="!nextDeliveries.length" class="empty-state">Nenhuma entrega com data programada.</p>
           </div>
-        </template>
+        </BaseCard>
+      </section>
 
-        <div class="timeline-grid">
-          <article v-for="delivery in nextDeliveries" :key="delivery.id" class="content-card content-card--delivery">
-            <time>{{ delivery.displayDate }}</time>
-            <div>
-              <strong>{{ delivery.name }}</strong>
-              <p>{{ delivery.workName }} · {{ delivery.quantity }}</p>
-              <span>{{ delivery.deliveryAddress }}</span>
+      <section class="dashboard-columns">
+        <BaseCard>
+          <template #header>
+            <div class="section-heading">
+              <p class="pill">Projetos</p>
+              <h3>Projetos visíveis</h3>
             </div>
-          </article>
+          </template>
 
-          <p v-if="!nextDeliveries.length" class="empty-state">Nenhuma entrega com data programada.</p>
-        </div>
-      </BaseCard>
-    </section>
-
-    <section class="dashboard-columns">
-      <BaseCard>
-        <template #header>
-          <div class="section-heading">
-            <p class="pill">Projetos</p>
-            <h3>Projetos visíveis</h3>
-          </div>
-        </template>
-
-        <div class="project-grid">
-          <article v-for="project in projectHighlights" :key="project.id" class="content-card content-card--project">
-            <div class="content-card__header">
-              <div>
-                <strong>{{ project.name }}</strong>
-                <p>{{ project.workName }} · {{ project.product }}</p>
+          <div class="project-grid">
+            <article v-for="project in projectHighlights" :key="project.id" class="content-card content-card--project">
+              <div class="content-card__header">
+                <div>
+                  <strong>{{ project.name }}</strong>
+                  <p>{{ project.workName }} · {{ project.product }}</p>
+                </div>
+                <span class="status-badge status-badge--document">{{ project.stage }}</span>
               </div>
-              <span class="status-badge status-badge--document">{{ project.stage }}</span>
-            </div>
 
-            <div class="content-card__meta">
-              <span class="info-chip">{{ project.quantity }}</span>
-              <span class="info-chip">{{ project.totalValue }}</span>
-            </div>
-          </article>
-
-          <p v-if="!projectHighlights.length" class="empty-state">Nenhum projeto liberado para consulta.</p>
-        </div>
-      </BaseCard>
-
-      <BaseCard>
-        <template #header>
-          <div class="section-heading">
-            <p class="pill">Documentos</p>
-            <h3>Últimos anexos liberados</h3>
-          </div>
-        </template>
-
-        <div class="document-grid">
-          <article v-for="attachment in recentAttachments" :key="attachment.id" class="content-card content-card--document">
-            <div class="content-card__header">
-              <div>
-                <strong>{{ attachment.name }}</strong>
-                <p>{{ attachment.linkedTypeLabel }} · {{ attachment.linkedRecordName }}</p>
+              <div class="content-card__meta">
+                <span class="info-chip">{{ project.quantity }}</span>
+                <span class="info-chip">{{ project.totalValue }}</span>
               </div>
-              <span class="info-chip info-chip--blue">{{ attachment.category }}</span>
+            </article>
+
+            <p v-if="!projectHighlights.length" class="empty-state">Nenhum projeto liberado para consulta.</p>
+          </div>
+        </BaseCard>
+
+        <BaseCard>
+          <template #header>
+            <div class="section-heading">
+              <p class="pill">Documentos</p>
+              <h3>Últimos anexos liberados</h3>
             </div>
+          </template>
 
-            <div class="content-card__meta">
-              <span class="info-chip">{{ attachment.uploadedAt }}</span>
-            </div>
-          </article>
+          <div class="document-grid">
+            <article v-for="attachment in recentAttachments" :key="attachment.id" class="content-card content-card--document">
+              <div class="content-card__header">
+                <div>
+                  <strong>{{ attachment.name }}</strong>
+                  <p>{{ attachment.linkedTypeLabel }} · {{ attachment.linkedRecordName }}</p>
+                </div>
+                <span class="info-chip info-chip--blue">{{ attachment.category }}</span>
+              </div>
 
-          <p v-if="!recentAttachments.length" class="empty-state">Nenhum anexo liberado para consulta.</p>
-        </div>
-      </BaseCard>
-    </section>
+              <div class="content-card__meta">
+                <span class="info-chip">{{ attachment.uploadedAt }}</span>
+              </div>
+            </article>
 
+            <p v-if="!recentAttachments.length" class="empty-state">Nenhum anexo liberado para consulta.</p>
+          </div>
+        </BaseCard>
+      </section>
+    </template>
   </div>
 </template>
 
@@ -220,7 +230,7 @@ import { computed, ref } from 'vue';
 import BaseCard from '@/components/common/BaseCard.vue';
 import { useClientPortalData } from '@/composables/useClientPortalData';
 
-const { portalData } = useClientPortalData();
+const { portalData, isLoading, error } = useClientPortalData();
 const isOverviewExpanded = ref(false);
 
 const currencyFormatter = new Intl.NumberFormat('pt-BR', {
@@ -389,6 +399,36 @@ function summarizeBy(items, getLabel) {
 </script>
 
 <style scoped>
+.page-status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  min-height: 300px;
+  text-align: center;
+  color: #4a5672;
+}
+
+.page-status--error {
+  color: #c0392b;
+}
+
+.loader {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #e2e8f5;
+  border-top-color: #050866;
+  border-radius: 50%;
+  animation: loader-spin 0.8s linear infinite;
+}
+
+@keyframes loader-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .company-hero {
   display: grid;
   grid-template-columns: minmax(0, 1.1fr) minmax(360px, 0.9fr);
@@ -785,5 +825,3 @@ function summarizeBy(items, getLabel) {
   }
 }
 </style>
-
-
