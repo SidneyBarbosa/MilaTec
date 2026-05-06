@@ -18,18 +18,36 @@ export class DeliveriesService {
 
   async findAllByUserEmail(email: string) {
     try {
-      const { budgetIds } = await this.companyService.getCompanyBudgetIds(email);
+      const { companyName } = await this.companyService.getCompanyContext(email);
 
-      if (budgetIds.length === 0) return [];
-
+      // Busca orçamentos da empresa, trazendo o campo Entregas vinculadas
       const formula = this.airtableService.buildLinkedRecordFilter(
-        'Orçamentos',
-        budgetIds,
+        'Empresa',
+        [companyName],
       );
 
-      const deliveries = await this.airtableService.getRecords('Entregas', {
+      const budgets = await this.airtableService.getRecords('Orçamentos', {
         filterByFormula: formula,
+        fields: ['Entregas'],
       });
+
+      // Extrai todos os IDs de entregas vinculadas, sem duplicatas
+      const deliveryIds = [
+        ...new Set(
+          budgets.flatMap((b) =>
+            Array.isArray(b['Entregas']) ? b['Entregas'] : [],
+          ),
+        ),
+      ];
+
+      if (deliveryIds.length === 0) return [];
+
+      // Busca cada entrega pelo ID em paralelo
+      const deliveries = await Promise.all(
+        deliveryIds.map((id) =>
+          this.airtableService.getRecordById('Entregas', id),
+        ),
+      );
 
       return deliveries.map((delivery) => this.mapDelivery(delivery));
     } catch (error) {
@@ -41,11 +59,29 @@ export class DeliveriesService {
 
   async findOneByUserEmail(email: string, deliveryId: string) {
     try {
-      const { budgetIds } = await this.companyService.getCompanyBudgetIds(email);
-      const delivery = await this.airtableService.getRecordById('Entregas', deliveryId);
+      const { companyName } = await this.companyService.getCompanyContext(email);
 
+      const delivery = await this.airtableService.getRecordById(
+        'Entregas',
+        deliveryId,
+      );
+
+      // Validação de ownership
       const deliveryBudgetIds = delivery['Orçamentos'] || [];
-      const belongsToCompany = deliveryBudgetIds.some((id) => budgetIds.includes(id));
+
+      const formula = this.airtableService.buildLinkedRecordFilter(
+        'Empresa',
+        [companyName],
+      );
+      const companyBudgets = await this.airtableService.getRecords('Orçamentos', {
+        filterByFormula: formula,
+        fields: ['Empresa'],
+      });
+      const companyBudgetIds = companyBudgets.map((b) => b.id);
+
+      const belongsToCompany = deliveryBudgetIds.some((id) =>
+        companyBudgetIds.includes(id),
+      );
 
       if (!belongsToCompany) {
         throw new NotFoundException(

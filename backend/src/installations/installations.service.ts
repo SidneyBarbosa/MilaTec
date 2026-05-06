@@ -18,15 +18,27 @@ export class InstallationsService {
 
   async findAllByUserEmail(email: string) {
     try {
-      const { company } = await this.companyService.findCompanyByUserEmail(email);
+      const { companyName } = await this.companyService.getCompanyContext(email);
 
-      /* Instalações se vinculam à empresa via Orçamentos. */
-      const companyBudgets = await this.airtableService.getRecords('Orçamentos');
-      const companyBudgetIds = companyBudgets
-        .filter((b) => Array.isArray(b['Empresa']) && b['Empresa'].includes(company.id))
-        .map((b) => b.id);
+      // 1. Pega os IDs dos orçamentos da empresa
+      const budgetFormula = this.airtableService.buildLinkedRecordFilter(
+        'Empresa',
+        [companyName],
+      );
 
+      const companyBudgets = await this.airtableService.getRecords('Orçamentos', {
+        filterByFormula: budgetFormula,
+        fields: ['Empresa'],
+      });
+      const companyBudgetIds = companyBudgets.map((b) => b.id);
+
+      if (companyBudgetIds.length === 0) return [];
+
+      // 2. Busca todas as instalações e filtra pelos IDs de orçamento
+      // (filterByFormula via SEARCH não funciona em linked records porque
+      // ARRAYJOIN retorna nomes, não IDs)
       const allInstallations = await this.airtableService.getRecords('Instalações');
+
       const companyInstallations = allInstallations.filter((installation) => {
         const budgetIds = installation['Orçamentos'];
         return (
@@ -45,22 +57,34 @@ export class InstallationsService {
 
   async findOneByUserEmail(email: string, installationId: string) {
     try {
-      const { company } = await this.companyService.findCompanyByUserEmail(email);
+      const { companyName } = await this.companyService.getCompanyContext(email);
+
       const installation = await this.airtableService.getRecordById(
         'Instalações',
         installationId,
       );
 
-      /* Validação de ownership: instalação precisa pertencer a um orçamento da empresa */
-      const budgetIds = installation['Orçamentos'] || [];
-      const companyBudgets = await this.airtableService.getRecords('Orçamentos');
-      const companyBudgetIds = companyBudgets
-        .filter((b) => Array.isArray(b['Empresa']) && b['Empresa'].includes(company.id))
-        .map((b) => b.id);
+      // Validação de ownership
+      const installBudgetIds = installation['Orçamentos'] || [];
 
-      const belongsToCompany = budgetIds.some((id) => companyBudgetIds.includes(id));
+      const budgetFormula = this.airtableService.buildLinkedRecordFilter(
+        'Empresa',
+        [companyName],
+      );
+      const companyBudgets = await this.airtableService.getRecords('Orçamentos', {
+        filterByFormula: budgetFormula,
+        fields: ['Empresa'],
+      });
+      const companyBudgetIds = companyBudgets.map((b) => b.id);
+
+      const belongsToCompany = installBudgetIds.some((id) =>
+        companyBudgetIds.includes(id),
+      );
+
       if (!belongsToCompany) {
-        throw new NotFoundException('Instalação não encontrada ou não pertence à sua empresa.');
+        throw new NotFoundException(
+          'Instalação não encontrada ou não pertence à sua empresa.',
+        );
       }
 
       return this.mapInstallation(installation);
