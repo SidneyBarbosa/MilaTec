@@ -1,6 +1,16 @@
 ﻿<template>
   <div class="page page--wide">
-    <FiltersBar
+    <div v-if="isLoading" class="page-status page-status--loading">
+      <span class="loader" aria-hidden="true"></span>
+      <p>Carregando obras...</p>
+    </div>
+
+    <div v-else-if="error" class="page-status page-status--error">
+      <p>{{ error }}</p>
+    </div>
+
+    <template v-else>
+      <FiltersBar
       :count="filteredWorks.length"
       :total="works.length"
       label="obras"
@@ -300,6 +310,7 @@
         </div>
       </section>
     </div>
+    </template>
   </div>
 </template>
 
@@ -315,7 +326,7 @@ import { matchesSearch, normalizeText, uniqueTextOptions } from '@/utils/text';
 
 const route = useRoute();
 const router = useRouter();
-const { portalData } = useClientPortalData();
+const { portalData, isLoading, error } = useClientPortalData();
 const selectedWorkId = ref('');
 const columnLimits = ref({});
 const searchTerm = ref('');
@@ -492,6 +503,35 @@ const resolveActionIcon = (actionLabel) => {
 </script>
 
 <style scoped>
+.page-status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  min-height: 300px;
+  text-align: center;
+  color: #4a5672;
+}
+
+.page-status--error {
+  color: #c0392b;
+}
+
+.loader {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #e2e8f5;
+  border-top-color: #050866;
+  border-radius: 50%;
+  animation: loader-spin 0.8s linear infinite;
+}
+
+@keyframes loader-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 .kanban-board {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 304px));
