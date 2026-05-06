@@ -45,6 +45,8 @@
         <span class="login__summary-pill">{{ selectedProfile.label }}</span>
         <p>{{ selectedProfile.description }}</p>
       </div>
+      
+      <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
 
       <BaseButton class="login__submit" size="lg" block>
         Receber código de acesso
@@ -62,13 +64,15 @@ import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import BaseButton from '@/components/common/BaseButton.vue';
 import BaseInput from '@/components/common/BaseInput.vue';
-import { profileOptions } from '@/composables/useSession';
+import { profileOptions, requestAccessCode } from '@/composables/useSession';
 import logo from '@/assets/logo-milatec-BRtuGoQK.jpg (1).jpeg';
 
 const router = useRouter();
 
 const selectedRole = ref('client');
-const email = ref(profileOptions[0].defaultEmail);
+const email = ref('');
+const errorMessage = ref('');
+const isLoading = ref(false);
 
 const selectedProfile = computed(
   () => profileOptions.find((profile) => profile.role === selectedRole.value) || profileOptions[0],
@@ -76,17 +80,35 @@ const selectedProfile = computed(
 
 const selectProfile = (profile) => {
   selectedRole.value = profile.role;
-  email.value = profile.defaultEmail;
 };
 
-const onSubmit = () => {
-  router.push({
-    name: 'verify-code',
-    query: {
-      role: selectedRole.value,
-      email: (email.value || selectedProfile.value.defaultEmail).trim(),
-    },
-  });
+const onSubmit = async () => {
+  errorMessage.value = '';
+
+  const trimmedEmail = (email.value || '').trim();
+
+  if (!trimmedEmail) {
+    errorMessage.value = 'Informe um e-mail válido.';
+    return;
+  }
+
+  try {
+    isLoading.value = true;
+
+    await requestAccessCode({ email: trimmedEmail });
+
+    router.push({
+      name: 'verify-code',
+      query: {
+        role: selectedRole.value,
+        email: trimmedEmail,
+      },
+    });
+  } catch (error) {
+    errorMessage.value = error.message || 'Não foi possível enviar o código.';
+  } finally {
+    isLoading.value = false;
+  }
 };
 </script>
 
@@ -256,6 +278,16 @@ const onSubmit = () => {
   .login__roles {
     grid-template-columns: 1fr;
   }
+}
+
+.error-message {
+  color: #c0392b;
+  background: #fdecea;
+  border: 1px solid #f5c6cb;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: 14px;
+  margin: 0;
 }
 </style>
 

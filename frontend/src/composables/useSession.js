@@ -1,4 +1,6 @@
 ﻿import { computed, ref } from 'vue';
+import { getToken, clearToken } from '@/services/api';
+import { requestLoginCode, verifyLoginCode } from '@/services/authService';
 
 const STORAGE_KEY_ROLE = 'milatec:session-role';
 const STORAGE_KEY_EMAIL = 'milatec:session-email';
@@ -8,22 +10,22 @@ const profileDirectory = Object.freeze({
     role: 'client',
     label: 'Cliente',
     areaLabel: 'Área do Cliente',
-    name: 'João Miguel',
-    company: 'Grupo Horizonte Participações',
-    companyId: 'emp-grupo-horizonte',
-    defaultEmail: 'joao@grupohorizonte.com',
-    initials: 'JM',
+    name: 'Cliente MilaTec',
+    company: '',
+    companyId: '',
+    defaultEmail: '',
+    initials: 'C',
     scopeLabel: 'Consulta somente leitura restrita a empresa, obras, projetos, entregas e anexos',
   }),
   admin: Object.freeze({
     role: 'admin',
     label: 'Administrador',
     areaLabel: 'Área Administrativa',
-    name: 'Ana Paula',
+    name: 'Administrador',
     company: 'MilaTec',
     companyId: '',
-    defaultEmail: 'operacoes@milatec.com.br',
-    initials: 'AP',
+    defaultEmail: '',
+    initials: 'A',
     scopeLabel: 'Leitura operacional multiempresa com exposição mínima por perfil',
   }),
 });
@@ -35,19 +37,20 @@ function readStorage(key) {
 
 function writeStorage(key, value) {
   if (typeof window === 'undefined') return;
-
   if (!value) {
     window.localStorage.removeItem(key);
     return;
   }
-
   window.localStorage.setItem(key, value);
 }
 
-const storedRole = readStorage(STORAGE_KEY_ROLE);
+// Considera autenticado quem tem token válido E role definido
+const initialRole = readStorage(STORAGE_KEY_ROLE);
+const initialEmail = readStorage(STORAGE_KEY_EMAIL);
+const initialToken = getToken();
 
-const sessionRole = ref(profileDirectory[storedRole] ? storedRole : '');
-const sessionEmail = ref(readStorage(STORAGE_KEY_EMAIL));
+const sessionRole = ref(profileDirectory[initialRole] && initialToken ? initialRole : '');
+const sessionEmail = ref(initialToken ? initialEmail : '');
 
 export const profileOptions = Object.values(profileDirectory).map((profile) => ({
   role: profile.role,
@@ -59,7 +62,6 @@ export const profileOptions = Object.values(profileDirectory).map((profile) => (
 
 export function getProfile(role = sessionRole.value, email = sessionEmail.value) {
   const baseProfile = profileDirectory[role];
-
   if (!baseProfile) return null;
 
   return {
@@ -79,22 +81,35 @@ export function resolveDefaultRoute(role = sessionRole.value) {
   return { name: 'login' };
 }
 
-export function signIn({ role, email }) {
-  const nextRole = profileDirectory[role] ? role : 'client';
-
-  sessionRole.value = nextRole;
-  sessionEmail.value = email || profileDirectory[nextRole].defaultEmail;
-
-  writeStorage(STORAGE_KEY_ROLE, nextRole);
-  writeStorage(STORAGE_KEY_EMAIL, sessionEmail.value);
+/* Solicita o código OTP via backend.
+   Não autentica ainda — apenas dispara o envio do e-mail. */
+export async function requestAccessCode({ email }) {
+  await requestLoginCode(email);
 }
 
+/* Valida o código OTP e finaliza o login com JWT.
+   Após sucesso, atualiza o estado da sessão. */
+export async function confirmAccessCode({ role, email, code }) {
+  const nextRole = profileDirectory[role] ? role : 'client';
+
+  await verifyLoginCode(email, code);
+
+  sessionRole.value = nextRole;
+  sessionEmail.value = email;
+
+  writeStorage(STORAGE_KEY_ROLE, nextRole);
+  writeStorage(STORAGE_KEY_EMAIL, email);
+}
+
+/* Encerra a sessão: limpa token JWT e dados locais. */
 export function signOut() {
   sessionRole.value = '';
   sessionEmail.value = '';
 
   writeStorage(STORAGE_KEY_ROLE, '');
   writeStorage(STORAGE_KEY_EMAIL, '');
+
+  clearToken();
 }
 
 export function useSession() {
@@ -105,7 +120,8 @@ export function useSession() {
     sessionRole: currentRole,
     currentProfile,
     profileOptions,
-    signIn,
+    requestAccessCode,
+    confirmAccessCode,
     signOut,
     resolveDefaultRoute,
     canAccessRoles,
@@ -113,4 +129,3 @@ export function useSession() {
 }
 
 export { sessionRole };
-

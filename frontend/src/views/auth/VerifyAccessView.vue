@@ -36,6 +36,8 @@
           tone="light"
           class="code-input"
         />
+        
+        <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
 
         <BaseButton size="lg" block>
           Entrar na plataforma
@@ -57,12 +59,19 @@ import { computed, ref } from 'vue';
 import { RouterLink, useRoute, useRouter } from 'vue-router';
 import BaseButton from '@/components/common/BaseButton.vue';
 import BaseInput from '@/components/common/BaseInput.vue';
-import { profileOptions, resolveDefaultRoute, signIn } from '@/composables/useSession';
+import {
+  profileOptions,
+  resolveDefaultRoute,
+  confirmAccessCode,
+  requestAccessCode,
+} from '@/composables/useSession';
 import logo from '@/assets/logo-milatec-BRtuGoQK.jpg (1).jpeg';
 
 const route = useRoute();
 const router = useRouter();
 const code = ref('');
+const errorMessage = ref('');
+const isLoading = ref(false);
 
 const requestedRole = computed(() => (route.query.role === 'admin' ? 'admin' : 'client'));
 const selectedProfile = computed(
@@ -73,17 +82,43 @@ const requestedEmail = computed(() => {
   return email || selectedProfile.value.defaultEmail;
 });
 
-const onSubmit = () => {
-  signIn({
-    role: requestedRole.value,
-    email: requestedEmail.value,
-  });
+const onSubmit = async () => {
+  errorMessage.value = '';
 
-  router.push(resolveDefaultRoute(requestedRole.value));
+  if (!code.value || code.value.length !== 6) {
+    errorMessage.value = 'Informe o código de 6 dígitos.';
+    return;
+  }
+
+  try {
+    isLoading.value = true;
+
+    await confirmAccessCode({
+      role: requestedRole.value,
+      email: requestedEmail.value,
+      code: code.value,
+    });
+
+    router.push(resolveDefaultRoute(requestedRole.value));
+  } catch (error) {
+    errorMessage.value = error.message || 'Não foi possível validar o código.';
+  } finally {
+    isLoading.value = false;
+  }
 };
 
-const onResend = () => {
+const onResend = async () => {
+  errorMessage.value = '';
   code.value = '';
+
+  try {
+    isLoading.value = true;
+    await requestAccessCode({ email: requestedEmail.value });
+  } catch (error) {
+    errorMessage.value = error.message || 'Não foi possível reenviar o código.';
+  } finally {
+    isLoading.value = false;
+  }
 };
 </script>
 
@@ -228,6 +263,16 @@ h1 {
     flex-direction: column;
     align-items: stretch;
   }
+}
+
+.error-message {
+  color: #c0392b;
+  background: #fdecea;
+  border: 1px solid #f5c6cb;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: 14px;
+  margin: 0;
 }
 </style>
 
