@@ -159,23 +159,103 @@ function adaptClientPortalData(dashboard) {
   });
 
   // Adaptar anexos
-  const adaptedAttachments = documents.map((doc) => {
-    let linkedTypeLabel = 'Documento';
-    if (doc.source === 'Orçamentos') linkedTypeLabel = 'Orçamento';
-    else if (doc.source === 'Instalações') linkedTypeLabel = 'Obra';
-    else if (doc.source === 'Entregas') linkedTypeLabel = 'Entrega';
+const adaptedAttachments = documents.map((doc) => {
+  // entityType normalizado para o filtro do front (sem acento, minúsculo)
+  let entityType = 'documento';
+  let linkedTypeLabel = 'Documento';
 
-    return {
-      id: doc.id,
-      name: doc.filename,
-      category: doc.category || 'Documento',
-      uploadedAt: 'Disponível',
-      href: doc.url,
-      actionLabel: 'Baixar',
-      linkedTypeLabel,
-      linkedRecordName: doc.recordId || '-',
-    };
-  });
+  if (doc.source === 'Orçamentos') {
+    entityType = 'orcamento';
+    linkedTypeLabel = 'Orçamento';
+  } else if (doc.source === 'Instalações') {
+    entityType = 'projeto';
+    linkedTypeLabel = 'Obra';
+  } else if (doc.source === 'Entregas') {
+    entityType = 'entrega';
+    linkedTypeLabel = 'Entrega';
+  }
+
+  // Tenta encontrar o nome do registro vinculado para exibir
+  let linkedRecordName = doc.recordId || '-';
+  if (doc.source === 'Orçamentos') {
+    const budget = budgetById.get(doc.recordId);
+    if (budget) {
+      linkedRecordName = Array.isArray(budget.product)
+        ? budget.product[0]
+        : budget.product || 'Orçamento';
+    }
+  } else if (doc.source === 'Instalações') {
+    const installation = installations.find((i) => i.id === doc.recordId);
+    if (installation) {
+      linkedRecordName = installation.installationId || installation.serviceType || 'Instalação';
+    }
+  } else if (doc.source === 'Entregas') {
+    const delivery = deliveries.find((d) => d.id === doc.recordId);
+    if (delivery) {
+      linkedRecordName = `Entrega ${delivery.deliveryDate || ''}`.trim();
+    }
+  }
+
+  // Identifica obras e projetos relacionados (para os filtros da tela)
+  const relatedWorkIds = [];
+  const relatedWorkNames = [];
+  const relatedProjectIds = [];
+  const relatedProjectNames = [];
+
+  if (doc.source === 'Orçamentos') {
+    const budget = budgetById.get(doc.recordId);
+    if (budget) {
+      // Projetos vinculados ao orçamento
+      (budget.linkedProjects || []).forEach((projectId) => {
+        const project = projects.find((p) => p.id === projectId);
+        if (project) {
+          relatedProjectIds.push(project.id);
+          relatedProjectNames.push(project.name);
+        }
+      });
+      // Obras (instalações) vinculadas ao orçamento
+      const linkedInstallation = installationByBudgetId.get(budget.id);
+      if (linkedInstallation) {
+        relatedWorkIds.push(linkedInstallation.id);
+        relatedWorkNames.push(linkedInstallation.serviceType || 'Obra');
+      }
+    }
+  } else if (doc.source === 'Instalações') {
+    const installation = installations.find((i) => i.id === doc.recordId);
+    if (installation) {
+      relatedWorkIds.push(installation.id);
+      relatedWorkNames.push(installation.serviceType || 'Obra');
+    }
+  } else if (doc.source === 'Entregas') {
+    const delivery = deliveries.find((d) => d.id === doc.recordId);
+    if (delivery) {
+      (delivery.linkedBudgets || []).forEach((budgetId) => {
+        const inst = installationByBudgetId.get(budgetId);
+        if (inst && !relatedWorkIds.includes(inst.id)) {
+          relatedWorkIds.push(inst.id);
+          relatedWorkNames.push(inst.serviceType || 'Obra');
+        }
+      });
+    }
+  }
+
+  return {
+    id: doc.id,
+    name: doc.filename,
+    category: doc.category || 'Documento',
+    uploadedAt: 'Disponível',
+    href: doc.url,
+    actionLabel: 'Baixar',
+    entityType,
+    entityId: doc.recordId,
+    linkedTypeLabel,
+    linkedRecordName,
+    relatedWorkIds,
+    relatedWorkNames,
+    relatedProjectIds,
+    relatedProjectNames,
+  };
+});
 
   return {
     company: {
