@@ -25,7 +25,7 @@ export class AuthController {
   @Post('verify')
   @HttpCode(200)
   async verify(@Body() verifyDto: VerifyDto) {
-    return this.authService.verify(verifyDto.email, verifyDto.code);
+    return this.authService.verify(verifyDto.email, verifyDto.code, verifyDto.role);
   }
 
   @Get('me')

@@ -11,7 +11,7 @@ import { JwtAuthGuard } from './jwt-auth.guard';
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET'),
+        secret: configService.get<string>('JWT_SECRET') || 'dev-secret-milatec',
         signOptions: { expiresIn: '8h' },
       }),
       inject: [ConfigService],

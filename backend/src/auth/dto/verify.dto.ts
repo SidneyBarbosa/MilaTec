@@ -1,4 +1,4 @@
-import { IsEmail, IsNotEmpty, IsString, Length } from 'class-validator';
+import { IsEmail, IsIn, IsNotEmpty, IsOptional, IsString, Length } from 'class-validator';
 
 export class VerifyDto {
   @IsEmail({}, { message: 'Informe um e-mail válido.' })
@@ -9,4 +9,9 @@ export class VerifyDto {
   @IsNotEmpty({ message: 'O código é obrigatório.' })
   @Length(6, 6, { message: 'O código deve ter 6 dígitos.' })
   code: string;
+
+  @IsOptional()
+  @IsString()
+  @IsIn(['admin', 'client', 'company'], { message: 'Perfil inválido.' })
+  role?: string;
 }
