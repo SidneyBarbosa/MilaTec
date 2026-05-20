@@ -1,6 +1,6 @@
 import { reactive } from 'vue';
 import { fetchDashboard } from './portalDataApi';
-import { getAdminDashboard } from './adminApi';
+import { getAdminDashboard, getAdminCompanies } from './adminApi';
 
 const currencyFormatter = new Intl.NumberFormat('pt-BR', {
   style: 'currency',
@@ -321,6 +321,7 @@ const adminState = reactive({
   attachments: [],
   accessSummary: [],
   accessProfiles: [],
+  allCompanies: [],
   securityRules: [
     'As rotas administrativas são protegidas por autenticação JWT.',
     'Usuários administradores acessam dados globais de empresas, obras, projetos e entregas.',
@@ -330,6 +331,7 @@ const adminState = reactive({
 
 let adminDataLoaded = false;
 let adminDataLoading = false;
+let currentFiltersJson = '{}';
 
 const getField = (record, names, fallback = '') => {
   for (const name of names) {
@@ -593,12 +595,16 @@ function adaptAdminPortalData(raw) {
   };
 }
 
-async function loadAdminPortalData() {
-  if (adminDataLoaded || adminDataLoading) return;
+async function loadAdminPortalData(filters = {}) {
+  const filtersJson = JSON.stringify(filters);
+
+  // Se já carregou com estes mesmos filtros e não está carregando, pula.
+  if (adminDataLoaded && !adminDataLoading && currentFiltersJson === filtersJson) return;
+
   adminDataLoading = true;
 
   try {
-    const dashboard = await getAdminDashboard();
+    const dashboard = await getAdminDashboard(filters);
     const data = adaptAdminPortalData(dashboard);
 
     replaceArray(adminState.summaryCards, data.summaryCards);
@@ -611,6 +617,16 @@ async function loadAdminPortalData() {
     replaceArray(adminState.accessProfiles, data.accessProfiles);
     replaceArray(adminState.securityRules, data.securityRules);
 
+    // Carrega a lista completa de empresas para os filtros se ainda não tiver
+    if (adminState.allCompanies.length === 0) {
+      const companiesRaw = await getAdminCompanies();
+      const companyNames = companiesRaw
+        .map((c) => getField(c, ['Empresa', 'Nome', 'Name'], 'Empresa não informada'))
+        .sort();
+      replaceArray(adminState.allCompanies, [...new Set(companyNames)]);
+    }
+
+    currentFiltersJson = filtersJson;
     adminDataLoaded = true;
   } catch (error) {
     console.error('Erro ao carregar dados administrativos:', error);
@@ -619,7 +635,7 @@ async function loadAdminPortalData() {
   }
 }
 
-export function getAdminPortalData() {
-  loadAdminPortalData();
+export function getAdminPortalData(filters = {}) {
+  loadAdminPortalData(filters);
   return adminState;
 }

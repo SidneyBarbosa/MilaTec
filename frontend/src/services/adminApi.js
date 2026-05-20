@@ -1,15 +1,15 @@
 import { api } from './api';
 
-export async function getAdminDashboard() {
-  return api.get('/admin/dashboard');
+export async function getAdminDashboard(params = {}) {
+  return api.get('/admin/dashboard', { params });
 }
 
 export async function getAdminProjects() {
   return api.get('/admin/projects');
 }
 
-export async function getAdminCompanies() {
-  return api.get('/admin/companies');
+export async function getAdminCompanies(params = {}) {
+  return api.get('/admin/companies', { params });
 }
 
 export async function getAdminUsers() {
