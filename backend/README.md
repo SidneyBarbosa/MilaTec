@@ -1,2 +1,0 @@
-# MilaTec
-MilaTec - Residencia IV
