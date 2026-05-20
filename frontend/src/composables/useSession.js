@@ -92,12 +92,13 @@ export async function requestAccessCode({ email }) {
 export async function confirmAccessCode({ role, email, code }) {
   const nextRole = profileDirectory[role] ? role : 'client';
 
-  await verifyLoginCode(email, code);
+  const response = await verifyLoginCode(email, code, nextRole);
+  const confirmedRole = response?.role === 'admin' ? 'admin' : nextRole;
 
-  sessionRole.value = nextRole;
+  sessionRole.value = confirmedRole;
   sessionEmail.value = email;
 
-  writeStorage(STORAGE_KEY_ROLE, nextRole);
+  writeStorage(STORAGE_KEY_ROLE, confirmedRole);
   writeStorage(STORAGE_KEY_EMAIL, email);
 }
 

@@ -8,10 +8,11 @@ export async function requestLoginCode(email) {
 
 /* POST /auth/verify
    Valida o código OTP e armazena o token JWT. */
-export async function verifyLoginCode(email, code) {
+export async function verifyLoginCode(email, code, role) {
   const response = await api.post('/auth/verify', {
     email: email.trim().toLowerCase(),
     code: code.trim(),
+    role,
   });
 
   if (response?.access_token) {

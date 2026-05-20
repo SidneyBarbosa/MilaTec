@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
 
@@ -23,6 +23,14 @@ export class MailService {
     nomeCompleto: string,
   ): Promise<void> {
     const fromEmail = this.configService.get<string>('EMAIL_USER');
+    const appPassword = this.configService.get<string>('EMAIL_PASS');
+
+    if (!fromEmail || !appPassword) {
+      throw new InternalServerErrorException(
+        'EMAIL_USER e EMAIL_PASS precisam estar configurados no .env para envio do código por e-mail.',
+      );
+    }
+
     const firstName = nomeCompleto?.split(' ')[0] || 'usuário';
 
     const html = `

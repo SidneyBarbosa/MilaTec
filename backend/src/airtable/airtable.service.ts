@@ -68,10 +68,32 @@ export class AirtableService implements OnModuleInit {
             }
 
             const record = records[0];
+            const fields = record.fields || {};
+            const rawRole =
+              fields['role'] ||
+              fields['Role'] ||
+              fields['Perfil'] ||
+              fields['Tipo de acesso'] ||
+              fields['Tipo de usuário'] ||
+              fields['Cargo'];
+
+            const normalizedRole = String(rawRole || '')
+              .trim()
+              .toLowerCase();
+
+            const role =
+              normalizedRole.includes('admin') ||
+              normalizedRole.includes('administrador') ||
+              normalizedRole.includes('administrativo')
+                ? 'admin'
+                : 'client';
+
             return {
               id: record.id,
               email: record.get('E-mail'),
               nomeCompleto: record.get('Nome completo'),
+              role,
+              companyId: Array.isArray(fields['Empresa']) ? fields['Empresa'][0] : null,
             };
           },
           `findContactByEmail(${normalizedEmail})`,

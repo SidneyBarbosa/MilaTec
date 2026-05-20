@@ -1,4 +1,6 @@
+import { reactive } from 'vue';
 import { fetchDashboard } from './portalDataApi';
+import { getAdminDashboard } from './adminApi';
 
 const currencyFormatter = new Intl.NumberFormat('pt-BR', {
   style: 'currency',
@@ -309,18 +311,315 @@ export async function getClientPortalData() {
   return adaptClientPortalData(dashboard);
 }
 
-export function getAdminPortalData() {
+
+const adminState = reactive({
+  summaryCards: [],
+  customers: [],
+  works: [],
+  projects: [],
+  deliveries: [],
+  attachments: [],
+  accessSummary: [],
+  accessProfiles: [],
+  securityRules: [
+    'As rotas administrativas são protegidas por autenticação JWT.',
+    'Usuários administradores acessam dados globais de empresas, obras, projetos e entregas.',
+    'Usuários comuns devem permanecer restritos aos dados da própria empresa.',
+  ],
+});
+
+let adminDataLoaded = false;
+let adminDataLoading = false;
+
+const getField = (record, names, fallback = '') => {
+  for (const name of names) {
+    const value = record?.[name];
+    if (value !== undefined && value !== null && value !== '') return value;
+  }
+  return fallback;
+};
+
+const firstLinkedId = (value) => (Array.isArray(value) ? value[0] : value || '');
+
+function replaceArray(target, items) {
+  target.splice(0, target.length, ...(items || []));
+}
+
+function attachmentFrom(value, fallbackName = 'Anexo') {
+  if (Array.isArray(value) && value.length > 0) {
+    const file = value[0];
+    return {
+      name: file.filename || fallbackName,
+      href: file.url || '#',
+      actionLabel: file.url ? 'Abrir' : 'Visualizar',
+    };
+  }
+  return null;
+}
+
+function collectAttachments(record, sourceLabel, clientName = 'MilaTec') {
+  const ignoredFields = new Set([
+    'id',
+    'Empresa',
+    'Orçamentos',
+    'Projetos',
+    'Entregas',
+  ]);
+
+  return Object.entries(record || [])
+    .filter(([field, value]) => !ignoredFields.has(field) && Array.isArray(value))
+    .flatMap(([field, value]) =>
+      value
+        .filter((item) => item?.url || item?.filename)
+        .map((item) => ({
+          id: item.id || `${record.id}-${field}`,
+          client: clientName,
+          name: item.filename || field,
+          category: field,
+          uploadedAt: 'Disponível',
+          visibility: sourceLabel,
+          href: item.url || '#',
+          actionLabel: item.url ? 'Abrir' : 'Visualizar',
+          linkedTypeLabel: sourceLabel,
+          linkedRecordName: getField(record, ['Projeto', 'Produto', 'Tipo de serviço', 'Instalação ID', 'Etapa de entrega'], record.id),
+        })),
+    );
+}
+
+function adaptAdminPortalData(raw) {
+  const companies = raw?.companies || [];
+  const users = raw?.users || [];
+  const projects = raw?.projects || [];
+  const budgets = raw?.budgets || [];
+  const deliveries = raw?.deliveries || [];
+  const installations = raw?.installations || [];
+
+  const companyById = new Map(companies.map((company) => [company.id, company]));
+  const userByCompanyId = new Map();
+  users.forEach((user) => {
+    const companyId = firstLinkedId(getField(user, ['Empresa'], ''));
+    if (companyId && !userByCompanyId.has(companyId)) userByCompanyId.set(companyId, user);
+  });
+
+  const budgetById = new Map(budgets.map((budget) => [budget.id, budget]));
+  const installationByBudgetId = new Map();
+  installations.forEach((installation) => {
+    const linkedBudgetIds = getField(installation, ['Orçamentos'], []);
+    if (Array.isArray(linkedBudgetIds)) {
+      linkedBudgetIds.forEach((budgetId) => installationByBudgetId.set(budgetId, installation));
+    }
+  });
+
+  const customerRows = companies.map((company) => {
+    const contact = userByCompanyId.get(company.id) || {};
+    const companyName = getField(company, ['Empresa', 'Nome', 'Name'], 'Empresa não informada');
+    const companyBudgets = budgets.filter((budget) => {
+      const ids = getField(budget, ['Empresa'], []);
+      return Array.isArray(ids) && ids.includes(company.id);
+    });
+    const companyBudgetIds = companyBudgets.map((budget) => budget.id);
+    const companyProjects = projects.filter((project) => {
+      const ids = getField(project, ['Orçamentos'], []);
+      return Array.isArray(ids) && ids.some((id) => companyBudgetIds.includes(id));
+    });
+    const companyDeliveries = deliveries.filter((delivery) => {
+      const ids = getField(delivery, ['Orçamentos'], []);
+      return Array.isArray(ids) && ids.some((id) => companyBudgetIds.includes(id));
+    });
+    const companyWorks = installations.filter((installation) => {
+      const ids = getField(installation, ['Orçamentos'], []);
+      return Array.isArray(ids) && ids.some((id) => companyBudgetIds.includes(id));
+    });
+    const totalValue = companyBudgets.reduce((sum, budget) => sum + Number(getField(budget, ['Valor'], 0) || 0), 0);
+
+    return {
+      id: company.id,
+      company: companyName,
+      cityState: getField(company, ['Estado', 'Cidade', 'Cidade/Estado'], 'Local não informado'),
+      primaryContact: getField(contact, ['Nome completo', 'Nome', 'Name'], 'Contato não informado'),
+      email: getField(contact, ['E-mail', 'Email'], '-'),
+      phone: getField(contact, ['Número de telefone', 'Telefone', 'Phone'], '-'),
+      workCount: companyWorks.length,
+      projectCount: companyProjects.length,
+      deliveryCount: companyDeliveries.length,
+      attachmentCount: 0,
+      totalProjectValue: formatCurrency(totalValue),
+      linkedWorks: [],
+      linkedProjects: [],
+      linkedDeliveries: [],
+      linkedAttachments: [],
+    };
+  });
+
+  const customerNameByBudgetId = new Map();
+  budgets.forEach((budget) => {
+    const companyId = firstLinkedId(getField(budget, ['Empresa'], []));
+    const company = companyById.get(companyId);
+    customerNameByBudgetId.set(budget.id, getField(company, ['Empresa', 'Nome', 'Name'], 'Cliente não informado'));
+  });
+
+  const workRows = installations.map((installation) => {
+    const linkedBudgetIds = getField(installation, ['Orçamentos'], []);
+    const firstBudgetId = Array.isArray(linkedBudgetIds) ? linkedBudgetIds[0] : '';
+    const relatedProjects = projects.filter((project) => {
+      const ids = getField(project, ['Orçamentos'], []);
+      return Array.isArray(ids) && ids.some((id) => linkedBudgetIds.includes(id));
+    });
+    const relatedDeliveries = deliveries.filter((delivery) => {
+      const ids = getField(delivery, ['Orçamentos'], []);
+      return Array.isArray(ids) && ids.some((id) => linkedBudgetIds.includes(id));
+    });
+
+    return {
+      id: installation.id,
+      client: customerNameByBudgetId.get(firstBudgetId) || 'Cliente não informado',
+      name: getField(installation, ['Tipo de serviço', 'Instalação ID'], 'Obra'),
+      city: getField(installation, ['Cidade da obra (from Orçamentos)', 'Cidade da obra'], 'Local não informado'),
+      stage: getField(installation, ['Data de fim'], '') ? 'Concluída' : getField(installation, ['Data de início'], '') ? 'Em andamento' : 'Aguardando início',
+      quantity: getField(installation, ['Nº dias programados'], '-'),
+      value: formatCurrency(getField(installation, ['Valor Total Gasto'], 0)),
+      projectCount: relatedProjects.length,
+      deliveryCount: relatedDeliveries.length,
+      linkedProjects: relatedProjects.map((project) => ({
+        id: project.id,
+        name: getField(project, ['Projeto'], 'Projeto'),
+        product: getField(project, ['Tipo de orçamento'], '-'),
+        budgetType: getField(project, ['Tipo de orçamento'], '-'),
+        stage: getField(project, ['Etapa do projeto'], '-'),
+        quantity: getField(project, ['Peso do projeto (kg)'], '-'),
+        registrationAttachment: attachmentFrom(getField(project, ['Registro de obra'], []), 'Registro de obra'),
+      })),
+      linkedDeliveries: relatedDeliveries.map((delivery) => ({
+        id: delivery.id,
+        name: getField(delivery, ['Etapa de entrega'], 'Entrega'),
+        stage: getField(delivery, ['Etapa de entrega'], '-'),
+        quantity: getField(delivery, ['Quantidade'], '-'),
+        value: formatCurrency(getField(delivery, ['Valor'], 0)),
+        invoiceDate: formatDate(getField(delivery, ['Data de entrega'], '')),
+        deliveryAddress: getField(installation, ['Endereço de entrega (from Orçamentos)'], '-'),
+        purchaseOrderAttachment: attachmentFrom(getField(delivery, ['Pedido de compra'], []), 'Pedido de compra'),
+      })),
+    };
+  });
+
+  const projectRows = projects.map((project) => {
+    const linkedBudgetIds = getField(project, ['Orçamentos'], []);
+    const firstBudgetId = Array.isArray(linkedBudgetIds) ? linkedBudgetIds[0] : '';
+    const budget = budgetById.get(firstBudgetId) || {};
+    const installation = installationByBudgetId.get(firstBudgetId) || {};
+
+    return {
+      id: project.id,
+      client: customerNameByBudgetId.get(firstBudgetId) || 'Cliente não informado',
+      name: getField(project, ['Projeto'], 'Projeto'),
+      product: getField(project, ['Tipo de orçamento'], getField(budget, ['Produto'], '-')),
+      location: getField(installation, ['Cidade da obra (from Orçamentos)', 'Cidade da obra'], getField(budget, ['Cidade da obra'], '-')),
+      type: getField(project, ['Tipo de orçamento'], '-'),
+      stage: getField(project, ['Etapa do projeto'], 'Informação em atualização'),
+      quantity: getField(project, ['Peso do projeto (kg)'], '-'),
+      unitValue: 'A informar',
+      totalValue: formatCurrency(getField(budget, ['Valor'], 0)),
+      workName: getField(installation, ['Tipo de serviço', 'Instalação ID'], 'Obra não vinculada'),
+      workCity: getField(installation, ['Cidade da obra (from Orçamentos)', 'Cidade da obra'], '-'),
+      budgetName: getField(budget, ['Produto'], '-'),
+      budgetStatus: getField(budget, ['Etapa do negócio'], '-'),
+      budgetType: getField(project, ['Tipo de orçamento'], '-'),
+      value: formatCurrency(getField(budget, ['Valor'], 0)),
+      preProjectAttachment: attachmentFrom(getField(project, ['Pré-projeto'], []), 'Pré-projeto'),
+      approvalAttachment: attachmentFrom(getField(project, ['Projeto para aprovação'], []), 'Projeto para aprovação'),
+      executiveAttachment: attachmentFrom(getField(project, ['Projeto executivo'], []), 'Projeto executivo'),
+      registrationAttachment: attachmentFrom(getField(project, ['Registro de obra'], []), 'Registro de obra'),
+    };
+  });
+
+  const deliveryRows = deliveries.map((delivery) => {
+    const linkedBudgetIds = getField(delivery, ['Orçamentos'], []);
+    const firstBudgetId = Array.isArray(linkedBudgetIds) ? linkedBudgetIds[0] : '';
+    return {
+      id: delivery.id,
+      client: customerNameByBudgetId.get(firstBudgetId) || 'Cliente não informado',
+      name: getField(delivery, ['Etapa de entrega'], 'Entrega'),
+      date: formatDate(getField(delivery, ['Data de entrega'], '')),
+      quantity: getField(delivery, ['Quantidade'], '-'),
+      status: getField(delivery, ['Etapa de entrega'], 'Programada'),
+      tone: getDeliveryTone(getField(delivery, ['Etapa de entrega'], '')),
+    };
+  });
+
+  const attachmentRows = [
+    ...projects.flatMap((record) => collectAttachments(record, 'Projeto')),
+    ...deliveries.flatMap((record) => collectAttachments(record, 'Entrega')),
+    ...installations.flatMap((record) => collectAttachments(record, 'Obra')),
+    ...budgets.flatMap((record) => collectAttachments(record, 'Orçamento')),
+  ];
+
+  customerRows.forEach((customer) => {
+    customer.linkedWorks = workRows.filter((work) => work.client === customer.company);
+    customer.linkedProjects = projectRows.filter((project) => project.client === customer.company);
+    customer.linkedDeliveries = deliveryRows.filter((delivery) => delivery.client === customer.company);
+    customer.linkedAttachments = attachmentRows.filter((attachment) => attachment.client === customer.company);
+    customer.attachmentCount = customer.linkedAttachments.length;
+  });
+
+  const accessProfiles = users.map((user) => ({
+    id: user.id,
+    profile: getField(user, ['role', 'Role', 'Perfil', 'Tipo de acesso', 'Cargo'], 'Usuário'),
+    owner: getField(user, ['Nome completo', 'Nome'], 'Usuário'),
+    scope: getField(user, ['Empresa'], []).length ? 'Empresa vinculada' : 'Sem empresa vinculada',
+    status: 'Ativo',
+    tone: 'success',
+    reviewedAt: 'Base Airtable',
+  }));
+
   return {
     summaryCards: [
-      { label: 'Empresas ativas', value: '—', detail: 'Aguardando integração admin', accent: '#050866' },
-      { label: 'Obras monitoradas', value: '—', detail: 'Aguardando integração admin', accent: '#004AE8' },
-      { label: 'Entregas publicadas', value: '—', detail: 'Aguardando integração admin', accent: '#00A34A' },
-      { label: 'Anexos liberados', value: '—', detail: 'Aguardando integração admin', accent: '#004AE8' },
+      { label: 'Empresas ativas', value: String(companies.length), detail: 'Empresas cadastradas no Airtable', accent: '#050866' },
+      { label: 'Obras monitoradas', value: String(installations.length), detail: 'Instalações/obras acompanhadas', accent: '#004AE8' },
+      { label: 'Entregas publicadas', value: String(deliveries.length), detail: 'Entregas registradas', accent: '#00A34A' },
+      { label: 'Projetos', value: String(projects.length), detail: 'Projetos vinculados aos orçamentos', accent: '#004AE8' },
     ],
-    customers: [],
-    works: [],
-    projects: [],
-    deliveries: [],
-    attachments: [],
+    customers: customerRows,
+    works: workRows,
+    projects: projectRows,
+    deliveries: deliveryRows,
+    attachments: attachmentRows,
+    accessSummary: [
+      { label: 'Usuários', value: String(users.length), detail: 'Contatos cadastrados', accent: '#050866' },
+      { label: 'Administradores', value: String(accessProfiles.filter((p) => String(p.profile).toLowerCase().includes('admin')).length), detail: 'Perfis administrativos', accent: '#004AE8' },
+      { label: 'Clientes', value: String(users.length), detail: 'Usuários com acesso ao portal', accent: '#00A34A' },
+    ],
+    accessProfiles,
+    securityRules: adminState.securityRules,
   };
+}
+
+async function loadAdminPortalData() {
+  if (adminDataLoaded || adminDataLoading) return;
+  adminDataLoading = true;
+
+  try {
+    const dashboard = await getAdminDashboard();
+    const data = adaptAdminPortalData(dashboard);
+
+    replaceArray(adminState.summaryCards, data.summaryCards);
+    replaceArray(adminState.customers, data.customers);
+    replaceArray(adminState.works, data.works);
+    replaceArray(adminState.projects, data.projects);
+    replaceArray(adminState.deliveries, data.deliveries);
+    replaceArray(adminState.attachments, data.attachments);
+    replaceArray(adminState.accessSummary, data.accessSummary);
+    replaceArray(adminState.accessProfiles, data.accessProfiles);
+    replaceArray(adminState.securityRules, data.securityRules);
+
+    adminDataLoaded = true;
+  } catch (error) {
+    console.error('Erro ao carregar dados administrativos:', error);
+  } finally {
+    adminDataLoading = false;
+  }
+}
+
+export function getAdminPortalData() {
+  loadAdminPortalData();
+  return adminState;
 }
