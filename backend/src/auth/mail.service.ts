@@ -8,12 +8,22 @@ export class MailService {
   private transporter: nodemailer.Transporter;
 
   constructor(private readonly configService: ConfigService) {
+    /* CORRIGIDO: configuração manual com porta 465 + SSL.
+       Antes: service: 'gmail' (porta 587 TLS) — bloqueada pelo Render Free.
+       Agora: porta 465 com SSL — funciona em hospedagens gratuitas. */
     this.transporter = nodemailer.createTransport({
-      service: 'gmail',
+      host: 'smtp.gmail.com',
+      port: 465,
+      secure: true, // true para porta 465 (SSL)
       auth: {
         user: this.configService.get<string>('EMAIL_USER'),
         pass: this.configService.get<string>('EMAIL_PASS'),
       },
+      /* Timeout maior para ambientes de produção lentos como o Render Free.
+         O timeout padrão é muito curto e gera "Connection timeout". */
+      connectionTimeout: 60_000, // 60 segundos para conectar
+      greetingTimeout: 30_000,   // 30 segundos para o handshake
+      socketTimeout: 60_000,     // 60 segundos por operação
     });
   }
 
