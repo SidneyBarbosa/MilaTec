@@ -1,6 +1,6 @@
 import { reactive } from 'vue';
 import { fetchDashboard } from './portalDataApi';
-import { getAdminDashboard, getAdminCompanies } from './adminApi';
+import { getAdminDashboard } from './adminApi';
 
 const currencyFormatter = new Intl.NumberFormat('pt-BR', {
   style: 'currency',
@@ -321,7 +321,6 @@ const adminState = reactive({
   attachments: [],
   accessSummary: [],
   accessProfiles: [],
-  allCompanies: [],
   securityRules: [
     'As rotas administrativas são protegidas por autenticação JWT.',
     'Usuários administradores acessam dados globais de empresas, obras, projetos e entregas.',
@@ -331,7 +330,6 @@ const adminState = reactive({
 
 let adminDataLoaded = false;
 let adminDataLoading = false;
-let currentFiltersJson = '{}';
 
 const getField = (record, names, fallback = '') => {
   for (const name of names) {
@@ -359,7 +357,7 @@ function attachmentFrom(value, fallbackName = 'Anexo') {
   return null;
 }
 
-function collectAttachments(record, sourceLabel, clientName = 'MilaTec') {
+function collectAttachments(record, sourceLabel, clientName = 'Cliente não informado', companyId = '') {
   const ignoredFields = new Set([
     'id',
     'Empresa',
@@ -376,6 +374,7 @@ function collectAttachments(record, sourceLabel, clientName = 'MilaTec') {
         .map((item) => ({
           id: item.id || `${record.id}-${field}`,
           client: clientName,
+          companyId,
           name: item.filename || field,
           category: field,
           uploadedAt: 'Disponível',
@@ -436,6 +435,7 @@ function adaptAdminPortalData(raw) {
 
     return {
       id: company.id,
+      companyId: company.id,
       company: companyName,
       cityState: getField(company, ['Estado', 'Cidade', 'Cidade/Estado'], 'Local não informado'),
       primaryContact: getField(contact, ['Nome completo', 'Nome', 'Name'], 'Contato não informado'),
@@ -454,15 +454,30 @@ function adaptAdminPortalData(raw) {
   });
 
   const customerNameByBudgetId = new Map();
+  const companyIdByBudgetId = new Map();
+
   budgets.forEach((budget) => {
     const companyId = firstLinkedId(getField(budget, ['Empresa'], []));
     const company = companyById.get(companyId);
     customerNameByBudgetId.set(budget.id, getField(company, ['Empresa', 'Nome', 'Name'], 'Cliente não informado'));
+    companyIdByBudgetId.set(budget.id, companyId || '');
   });
+
+  const resolveCompanyIdFromBudgetIds = (budgetIds = []) => {
+    const firstBudgetId = Array.isArray(budgetIds) ? budgetIds[0] : budgetIds;
+    return companyIdByBudgetId.get(firstBudgetId) || '';
+  };
+
+  const resolveCompanyNameFromBudgetIds = (budgetIds = []) => {
+    const firstBudgetId = Array.isArray(budgetIds) ? budgetIds[0] : budgetIds;
+    return customerNameByBudgetId.get(firstBudgetId) || 'Cliente não informado';
+  };
 
   const workRows = installations.map((installation) => {
     const linkedBudgetIds = getField(installation, ['Orçamentos'], []);
     const firstBudgetId = Array.isArray(linkedBudgetIds) ? linkedBudgetIds[0] : '';
+    const companyId = resolveCompanyIdFromBudgetIds(linkedBudgetIds);
+    const clientName = resolveCompanyNameFromBudgetIds(linkedBudgetIds);
     const relatedProjects = projects.filter((project) => {
       const ids = getField(project, ['Orçamentos'], []);
       return Array.isArray(ids) && ids.some((id) => linkedBudgetIds.includes(id));
@@ -474,7 +489,8 @@ function adaptAdminPortalData(raw) {
 
     return {
       id: installation.id,
-      client: customerNameByBudgetId.get(firstBudgetId) || 'Cliente não informado',
+      client: clientName,
+      companyId,
       name: getField(installation, ['Tipo de serviço', 'Instalação ID'], 'Obra'),
       city: getField(installation, ['Cidade da obra (from Orçamentos)', 'Cidade da obra'], 'Local não informado'),
       stage: getField(installation, ['Data de fim'], '') ? 'Concluída' : getField(installation, ['Data de início'], '') ? 'Em andamento' : 'Aguardando início',
@@ -507,12 +523,15 @@ function adaptAdminPortalData(raw) {
   const projectRows = projects.map((project) => {
     const linkedBudgetIds = getField(project, ['Orçamentos'], []);
     const firstBudgetId = Array.isArray(linkedBudgetIds) ? linkedBudgetIds[0] : '';
+    const companyId = resolveCompanyIdFromBudgetIds(linkedBudgetIds);
+    const clientName = resolveCompanyNameFromBudgetIds(linkedBudgetIds);
     const budget = budgetById.get(firstBudgetId) || {};
     const installation = installationByBudgetId.get(firstBudgetId) || {};
 
     return {
       id: project.id,
-      client: customerNameByBudgetId.get(firstBudgetId) || 'Cliente não informado',
+      client: clientName,
+      companyId,
       name: getField(project, ['Projeto'], 'Projeto'),
       product: getField(project, ['Tipo de orçamento'], getField(budget, ['Produto'], '-')),
       location: getField(installation, ['Cidade da obra (from Orçamentos)', 'Cidade da obra'], getField(budget, ['Cidade da obra'], '-')),
@@ -534,25 +553,61 @@ function adaptAdminPortalData(raw) {
     };
   });
 
-  const deliveryRows = deliveries.map((delivery) => {
-    const linkedBudgetIds = getField(delivery, ['Orçamentos'], []);
-    const firstBudgetId = Array.isArray(linkedBudgetIds) ? linkedBudgetIds[0] : '';
-    return {
-      id: delivery.id,
-      client: customerNameByBudgetId.get(firstBudgetId) || 'Cliente não informado',
-      name: getField(delivery, ['Etapa de entrega'], 'Entrega'),
-      date: formatDate(getField(delivery, ['Data de entrega'], '')),
-      quantity: getField(delivery, ['Quantidade'], '-'),
-      status: getField(delivery, ['Etapa de entrega'], 'Programada'),
-      tone: getDeliveryTone(getField(delivery, ['Etapa de entrega'], '')),
-    };
-  });
+ const deliveryRows = deliveries.map((delivery) => {
+  const linkedBudgetIds = getField(delivery, ['Orçamentos'], []);
+  const companyId = resolveCompanyIdFromBudgetIds(linkedBudgetIds);
+  const clientName = resolveCompanyNameFromBudgetIds(linkedBudgetIds);
+
+  return {
+    id: delivery.id,
+    client: clientName,
+    companyId,
+    name: getField(delivery, ['Etapa de entrega'], 'Entrega'),
+    date: formatDate(getField(delivery, ['Data de entrega'], '')),
+    quantity: getField(delivery, ['Quantidade'], '-'),
+    status: getField(delivery, ['Etapa de entrega'], 'Programada'),
+    tone: getDeliveryTone(getField(delivery, ['Etapa de entrega'], '')),
+  };
+});
 
   const attachmentRows = [
-    ...projects.flatMap((record) => collectAttachments(record, 'Projeto')),
-    ...deliveries.flatMap((record) => collectAttachments(record, 'Entrega')),
-    ...installations.flatMap((record) => collectAttachments(record, 'Obra')),
-    ...budgets.flatMap((record) => collectAttachments(record, 'Orçamento')),
+    ...projects.flatMap((record) => {
+      const budgetIds = getField(record, ['Orçamentos'], []);
+      return collectAttachments(
+        record,
+        'Projeto',
+        resolveCompanyNameFromBudgetIds(budgetIds),
+        resolveCompanyIdFromBudgetIds(budgetIds),
+      );
+    }),
+    ...deliveries.flatMap((record) => {
+      const budgetIds = getField(record, ['Orçamentos'], []);
+      return collectAttachments(
+        record,
+        'Entrega',
+        resolveCompanyNameFromBudgetIds(budgetIds),
+        resolveCompanyIdFromBudgetIds(budgetIds),
+      );
+    }),
+    ...installations.flatMap((record) => {
+      const budgetIds = getField(record, ['Orçamentos'], []);
+      return collectAttachments(
+        record,
+        'Obra',
+        resolveCompanyNameFromBudgetIds(budgetIds),
+        resolveCompanyIdFromBudgetIds(budgetIds),
+      );
+    }),
+    ...budgets.flatMap((record) => {
+      const companyId = firstLinkedId(getField(record, ['Empresa'], []));
+      const company = companyById.get(companyId);
+      return collectAttachments(
+        record,
+        'Orçamento',
+        getField(company, ['Empresa', 'Nome', 'Name'], 'Cliente não informado'),
+        companyId,
+      );
+    }),
   ];
 
   customerRows.forEach((customer) => {
@@ -563,15 +618,23 @@ function adaptAdminPortalData(raw) {
     customer.attachmentCount = customer.linkedAttachments.length;
   });
 
-  const accessProfiles = users.map((user) => ({
-    id: user.id,
-    profile: getField(user, ['role', 'Role', 'Perfil', 'Tipo de acesso', 'Cargo'], 'Usuário'),
-    owner: getField(user, ['Nome completo', 'Nome'], 'Usuário'),
-    scope: getField(user, ['Empresa'], []).length ? 'Empresa vinculada' : 'Sem empresa vinculada',
-    status: 'Ativo',
-    tone: 'success',
-    reviewedAt: 'Base Airtable',
-  }));
+  const accessProfiles = users.map((user) => {
+    const companyId = firstLinkedId(getField(user, ['Empresa'], []));
+    const company = companyById.get(companyId);
+    const accessLevel = getField(user, ['role', 'Role', 'Perfil', 'Tipo de acesso', 'Cargo'], 'Usuário');
+
+    return {
+      id: user.id,
+      companyId,
+      companyName: getField(company, ['Empresa', 'Nome', 'Name'], companyId ? 'Empresa não informada' : 'Todas as empresas'),
+      profile: accessLevel,
+      accessLevel,
+      owner: getField(user, ['Nome completo', 'Nome'], 'Usuário'),
+      scope: companyId ? 'Empresa vinculada' : 'Acesso global',
+      status: 'Ativo',
+      tone: 'success',
+    };
+  });
 
   return {
     summaryCards: [
@@ -595,16 +658,12 @@ function adaptAdminPortalData(raw) {
   };
 }
 
-async function loadAdminPortalData(filters = {}) {
-  const filtersJson = JSON.stringify(filters);
-
-  // Se já carregou com estes mesmos filtros e não está carregando, pula.
-  if (adminDataLoaded && !adminDataLoading && currentFiltersJson === filtersJson) return;
-
+async function loadAdminPortalData() {
+  if (adminDataLoaded || adminDataLoading) return;
   adminDataLoading = true;
 
   try {
-    const dashboard = await getAdminDashboard(filters);
+    const dashboard = await getAdminDashboard();
     const data = adaptAdminPortalData(dashboard);
 
     replaceArray(adminState.summaryCards, data.summaryCards);
@@ -617,16 +676,6 @@ async function loadAdminPortalData(filters = {}) {
     replaceArray(adminState.accessProfiles, data.accessProfiles);
     replaceArray(adminState.securityRules, data.securityRules);
 
-    // Carrega a lista completa de empresas para os filtros se ainda não tiver
-    if (adminState.allCompanies.length === 0) {
-      const companiesRaw = await getAdminCompanies();
-      const companyNames = companiesRaw
-        .map((c) => getField(c, ['Empresa', 'Nome', 'Name'], 'Empresa não informada'))
-        .sort();
-      replaceArray(adminState.allCompanies, [...new Set(companyNames)]);
-    }
-
-    currentFiltersJson = filtersJson;
     adminDataLoaded = true;
   } catch (error) {
     console.error('Erro ao carregar dados administrativos:', error);
@@ -635,7 +684,7 @@ async function loadAdminPortalData(filters = {}) {
   }
 }
 
-export function getAdminPortalData(filters = {}) {
-  loadAdminPortalData(filters);
+export function getAdminPortalData() {
+  loadAdminPortalData();
   return adminState;
 }

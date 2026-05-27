@@ -2,7 +2,7 @@
   <div class="page">
     <FiltersBar
       :count="filteredAttachments.length"
-      :total="attachments.length"
+      :total="scopedAttachments.length"
       label="anexos"
       :show-clear="Boolean(searchTerm || selectedCategory)"
       @clear="clearFilters"
@@ -36,6 +36,8 @@
             <span class="table__cell">
               <a
                 :href="attachment.href"
+                target="_blank"
+                rel="noopener noreferrer"
                 class="attachment-action"
                 :class="{ 'attachment-action--disabled': attachment.actionLabel === 'Restringido' }"
                 :aria-label="attachment.actionLabel"
@@ -61,21 +63,23 @@ import BaseSelect from '@/components/common/BaseSelect.vue';
 import FiltersBar from '@/components/common/FiltersBar.vue';
 import { getAdminPortalData } from '@/services/portalData';
 import { matchesSearch, uniqueTextOptions } from '@/utils/text';
+import { filterBySelectedAdminCompany } from '@/services/adminScope';
 
 const { attachments } = getAdminPortalData();
 const searchTerm = ref('');
 const selectedCategory = ref('');
+const scopedAttachments = computed(() => filterBySelectedAdminCompany(attachments));
 
 const categoryOptions = computed(() => [
   { label: 'Todas as categorias', value: '' },
-  ...uniqueTextOptions(attachments.map((attachment) => attachment.category)).map((category) => ({
+  ...uniqueTextOptions(scopedAttachments.value.map((attachment) => attachment.category)).map((category) => ({
     label: category,
     value: category,
   })),
 ]);
 
 const filteredAttachments = computed(() =>
-  attachments.filter(
+  scopedAttachments.value.filter(
     (attachment) =>
       (!selectedCategory.value || attachment.category === selectedCategory.value) &&
       matchesSearch(

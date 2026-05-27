@@ -5,58 +5,38 @@ import { AirtableService } from '../airtable/airtable.service';
 export class AdminService {
   constructor(private readonly airtableService: AirtableService) {}
 
-  async getAllProjects(filter?: { companyName?: string }) {
-    const options: any = {};
-    if (filter?.companyName) {
-      options.filterByFormula = `{Empresa (from Orçamentos)} = "${filter.companyName}"`;
-    }
-    return this.airtableService.getRecords('Projetos', options);
+  async getAllProjects() {
+    return this.airtableService.getRecords('Projetos');
   }
 
-  async getAllCompanies(filter?: { name?: string }) {
-    const options: any = {};
-    if (filter?.name) {
-      options.filterByFormula = `{Empresa} = "${filter.name}"`;
-    }
-    return this.airtableService.getRecords('Empresas', options);
+  async getAllCompanies() {
+    return this.airtableService.getRecords('Empresas');
   }
 
   async getAllUsers() {
     return this.airtableService.getRecords('Contatos');
   }
 
-  async getAllBudgets(filter?: { companyName?: string }) {
-    const options: any = {};
-    if (filter?.companyName) {
-      options.filterByFormula = `{Empresa} = "${filter.companyName}"`;
-    }
-    return this.airtableService.getRecords('Orçamentos', options);
+  async getAllBudgets() {
+    return this.airtableService.getRecords('Orçamentos');
   }
 
-  async getAllDeliveries(filter?: { companyName?: string }) {
-    const options: any = {};
-    if (filter?.companyName) {
-      options.filterByFormula = `{Empresa (from Orçamentos)} = "${filter.companyName}"`;
-    }
-    return this.airtableService.getRecords('Entregas', options);
+  async getAllDeliveries() {
+    return this.airtableService.getRecords('Entregas');
   }
 
-  async getAllInstallations(filter?: { companyName?: string }) {
-    const options: any = {};
-    if (filter?.companyName) {
-      options.filterByFormula = `{Empresa (from Orçamentos)} = "${filter.companyName}"`;
-    }
-    return this.airtableService.getRecords('Instalações', options);
+  async getAllInstallations() {
+    return this.airtableService.getRecords('Instalações');
   }
 
-  async getDashboard(filters: { companyName?: string } = {}) {
+  async getDashboard() {
     const [projects, companies, users, budgets, deliveries, installations] = await Promise.all([
-      this.getAllProjects({ companyName: filters.companyName }),
-      this.getAllCompanies({ name: filters.companyName }),
+      this.getAllProjects(),
+      this.getAllCompanies(),
       this.getAllUsers(),
-      this.getAllBudgets({ companyName: filters.companyName }),
-      this.getAllDeliveries({ companyName: filters.companyName }),
-      this.getAllInstallations({ companyName: filters.companyName }),
+      this.getAllBudgets(),
+      this.getAllDeliveries(),
+      this.getAllInstallations(),
     ]);
 
     return {

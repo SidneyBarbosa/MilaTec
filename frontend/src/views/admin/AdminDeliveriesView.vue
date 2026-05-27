@@ -51,21 +51,23 @@ import BaseSelect from '@/components/common/BaseSelect.vue';
 import FiltersBar from '@/components/common/FiltersBar.vue';
 import { getAdminPortalData } from '@/services/portalData';
 import { matchesSearch, uniqueTextOptions } from '@/utils/text';
+import { filterBySelectedAdminCompany } from '@/services/adminScope';
 
 const { deliveries } = getAdminPortalData();
 const searchTerm = ref('');
 const selectedStatus = ref('');
+const scopedDeliveries = computed(() => filterBySelectedAdminCompany(deliveries));
 
 const statusOptions = computed(() => [
   { label: 'Todos os status', value: '' },
-  ...uniqueTextOptions(deliveries.map((delivery) => delivery.status)).map((status) => ({
+  ...uniqueTextOptions(scopedDeliveries.value.map((delivery) => delivery.status)).map((status) => ({
     label: status,
     value: status,
   })),
 ]);
 
 const filteredDeliveries = computed(() =>
-  deliveries.filter(
+  scopedDeliveries.value.filter(
     (delivery) =>
       (!selectedStatus.value || delivery.status === selectedStatus.value) &&
       matchesSearch([delivery.client, delivery.name, delivery.date, delivery.status], searchTerm.value),

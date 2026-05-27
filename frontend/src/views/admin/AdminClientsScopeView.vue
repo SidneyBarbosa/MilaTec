@@ -12,32 +12,13 @@
       :count="filteredCustomers.length"
       :total="customers.length"
       label="empresas"
-      :show-clear="Boolean(searchTerm || selectedCompany)"
-      @clear="clearFilters"
+      :show-clear="Boolean(searchTerm || selectedAdminCompanyId)"
+      @clear="clearPageFilters"
     >
-      <div class="search-group">
-        <BaseInput
-          v-model="searchTerm"
-          label="Buscar"
-          placeholder="Empresa, cidade, contato, e-mail ou telefone"
-          tone="light"
-        />
-        <button
-          type="button"
-          class="filter-toggle-btn"
-          :class="{ 'filter-toggle-btn--active': isFilterVisible || selectedCompany }"
-          title="Filtros avançados"
-          @click="toggleFilters"
-        >
-          <span class="material-icons">filter_list</span>
-        </button>
-      </div>
-
-      <BaseSelect
-        v-if="isFilterVisible || selectedCompany"
-        v-model="selectedCompany"
-        label="Filtrar por empresa"
-        :options="companyOptions"
+      <BaseInput
+        v-model="searchTerm"
+        label="Buscar"
+        placeholder="Empresa, cidade, contato, e-mail ou telefone"
         tone="light"
       />
     </FiltersBar>
@@ -235,6 +216,8 @@
                 v-for="attachment in selectedCustomer.linkedAttachments"
                 :key="attachment.id"
                 :href="attachment.href"
+                target="_blank"
+                rel="noopener noreferrer"
                 class="attachment-row"
                 :aria-label="attachment.actionLabel"
               >
@@ -255,35 +238,20 @@
 </template>
 
 <script setup>
-import { computed, ref, watch } from 'vue';
+import { computed, ref } from 'vue';
 import BaseCard from '@/components/common/BaseCard.vue';
 import BaseInput from '@/components/common/BaseInput.vue';
-import BaseSelect from '@/components/common/BaseSelect.vue';
 import FiltersBar from '@/components/common/FiltersBar.vue';
 import { getAdminPortalData } from '@/services/portalData';
 import { matchesSearch } from '@/utils/text';
+import { selectedAdminCompanyId, setSelectedAdminCompany, clearSelectedAdminCompany } from '@/services/adminScope';
 
+const { summaryCards, customers } = getAdminPortalData();
 const searchTerm = ref('');
-const selectedCompany = ref('');
-const isFilterVisible = ref(false);
-const selectedCustomerId = ref('');
-
-const adminState = getAdminPortalData();
-const summaryCards = computed(() => adminState.summaryCards);
-const customers = computed(() => adminState.customers);
-const allCompanies = computed(() => adminState.allCompanies);
-
-const companyOptions = computed(() => [
-  { label: 'Todas as empresas', value: '' },
-  ...allCompanies.value.map((name) => ({ label: name, value: name })),
-]);
-
-watch(selectedCompany, (newVal) => {
-  getAdminPortalData({ companyName: newVal });
-});
+const selectedCustomerId = ref(selectedAdminCompanyId.value || '');
 
 const filteredCustomers = computed(() =>
-  customers.value.filter((customer) =>
+  customers.filter((customer) =>
     matchesSearch(
       [customer.company, customer.cityState, customer.primaryContact, customer.email, customer.phone],
       searchTerm.value,
@@ -291,25 +259,21 @@ const filteredCustomers = computed(() =>
   ),
 );
 
-const selectedCustomer = computed(() =>
-  customers.value.find((customer) => customer.id === selectedCustomerId.value) || null
-);
-
-const toggleFilters = () => {
-  isFilterVisible.value = !isFilterVisible.value;
-};
-
-const clearFilters = () => {
-  searchTerm.value = '';
-  selectedCompany.value = '';
-};
+const selectedCustomer = computed(() => customers.find((customer) => customer.id === selectedCustomerId.value) || null);
 
 const openDetail = (customer) => {
   selectedCustomerId.value = customer.id;
+  setSelectedAdminCompany(customer.id);
 };
 
 const closeDetail = () => {
   selectedCustomerId.value = '';
+};
+
+const clearPageFilters = () => {
+  searchTerm.value = '';
+  selectedCustomerId.value = '';
+  clearSelectedAdminCompany();
 };
 
 const displayValue = (value) => value || '-';
@@ -333,41 +297,6 @@ const copyDetail = async () => {
   display: block;
   margin-top: 10px;
   font-size: 30px;
-}
-
-.search-group {
-  display: flex;
-  align-items: flex-end;
-  gap: 8px;
-}
-
-.search-group :deep(.field) {
-  flex: 1;
-}
-
-.filter-toggle-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 44px;
-  height: 44px;
-  border: 1px solid #d3dbeb;
-  border-radius: 8px;
-  background: var(--gray-50);
-  color: #1f2a44;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.filter-toggle-btn:hover {
-  background: #f0f4f8;
-  border-color: #b6c4dc;
-}
-
-.filter-toggle-btn--active {
-  background: rgba(0, 74, 232, 0.08);
-  border-color: rgba(0, 74, 232, 0.24);
-  color: var(--primary);
 }
 
 .table-card {

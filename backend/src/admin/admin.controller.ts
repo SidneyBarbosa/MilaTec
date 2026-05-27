@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards, Query } from '@nestjs/common';
+import { Controller, Get, UseGuards } from '@nestjs/common';
 import { AdminService } from './admin.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
@@ -11,8 +11,8 @@ export class AdminController {
   constructor(private readonly adminService: AdminService) {}
 
   @Get('dashboard')
-  async dashboard(@Query('companyName') companyName?: string) {
-    return this.adminService.getDashboard({ companyName });
+  async dashboard() {
+    return this.adminService.getDashboard();
   }
 
   @Get('projects')
@@ -21,8 +21,8 @@ export class AdminController {
   }
 
   @Get('companies')
-  async companies(@Query('name') name?: string) {
-    return this.adminService.getAllCompanies({ name });
+  async companies() {
+    return this.adminService.getAllCompanies();
   }
 
   @Get('users')

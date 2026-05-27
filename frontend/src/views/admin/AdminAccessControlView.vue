@@ -19,7 +19,7 @@
 
         <FiltersBar
           :count="filteredProfiles.length"
-          :total="accessProfiles.length"
+          :total="scopedProfiles.length"
           label="perfis"
           :show-clear="Boolean(searchTerm || selectedStatus)"
           @clear="clearFilters"
@@ -32,20 +32,20 @@
           <div class="table__head">
             <span>Perfil</span>
             <span>Conta</span>
-            <span>Escopo liberado</span>
+            <span>Empresa</span>
+            <span>Nível de acesso</span>
             <span>Status</span>
-            <span>Última revisão</span>
           </div>
 
           <div class="table__body">
             <div v-for="item in filteredProfiles" :key="`${item.profile}-${item.owner}`" class="table__row">
               <span class="table__cell table__cell--title">{{ item.profile }}</span>
               <span class="table__cell">{{ item.owner }}</span>
-              <span class="table__cell">{{ item.scope }}</span>
+              <span class="table__cell">{{ item.companyName }}</span>
+              <span class="table__cell">{{ item.accessLevel }}</span>
               <span class="table__cell">
                 <span class="status-badge" :class="`status-badge--${item.tone}`">{{ item.status }}</span>
               </span>
-              <span class="table__cell">{{ item.reviewedAt }}</span>
             </div>
 
             <p v-if="!filteredProfiles.length" class="table__empty">Nenhum perfil encontrado com os filtros atuais.</p>
@@ -79,24 +79,26 @@ import BaseSelect from '@/components/common/BaseSelect.vue';
 import FiltersBar from '@/components/common/FiltersBar.vue';
 import { getAdminPortalData } from '@/services/portalData';
 import { matchesSearch, uniqueTextOptions } from '@/utils/text';
+import { filterBySelectedAdminCompany } from '@/services/adminScope';
 
 const { accessSummary, accessProfiles, securityRules } = getAdminPortalData();
 const searchTerm = ref('');
 const selectedStatus = ref('');
+const scopedProfiles = computed(() => filterBySelectedAdminCompany(accessProfiles));
 
 const statusOptions = computed(() => [
   { label: 'Todos os status', value: '' },
-  ...uniqueTextOptions(accessProfiles.map((item) => item.status)).map((status) => ({
+  ...uniqueTextOptions(scopedProfiles.value.map((item) => item.status)).map((status) => ({
     label: status,
     value: status,
   })),
 ]);
 
 const filteredProfiles = computed(() =>
-  accessProfiles.filter(
+  scopedProfiles.value.filter(
     (item) =>
       (!selectedStatus.value || item.status === selectedStatus.value) &&
-      matchesSearch([item.profile, item.owner, item.scope, item.status, item.reviewedAt], searchTerm.value),
+      matchesSearch([item.profile, item.owner, item.companyName, item.accessLevel, item.scope, item.status], searchTerm.value),
   ),
 );
 

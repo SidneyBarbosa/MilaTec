@@ -160,6 +160,8 @@
                 <a
                   v-if="item.attachment"
                   :href="item.attachment.href"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   class="attachment-action"
                   :aria-label="item.attachment.actionLabel"
                 >
@@ -178,6 +180,8 @@
                 <a
                   v-if="selectedProject.registrationAttachment"
                   :href="selectedProject.registrationAttachment.href"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   class="attachment-action"
                   :aria-label="selectedProject.registrationAttachment.actionLabel"
                 >
@@ -204,22 +208,24 @@ import FiltersBar from '@/components/common/FiltersBar.vue';
 import { getAdminPortalData } from '@/services/portalData';
 import { matchesSearch, uniqueTextOptions } from '@/utils/text';
 import { stageStyle } from '@/utils/stageColors';
+import { filterBySelectedAdminCompany } from '@/services/adminScope';
 
 const { projects } = getAdminPortalData();
 const searchTerm = ref('');
 const selectedStage = ref('');
 const selectedProjectId = ref('');
+const scopedProjects = computed(() => filterBySelectedAdminCompany(projects));
 
 const stageOptions = computed(() => [
   { label: 'Todas as etapas', value: '' },
-  ...uniqueTextOptions(projects.map((project) => project.stage)).map((stage) => ({
+  ...uniqueTextOptions(scopedProjects.value.map((project) => project.stage)).map((stage) => ({
     label: stage,
     value: stage,
   })),
 ]);
 
 const filteredProjects = computed(() =>
-  projects.filter(
+  scopedProjects.value.filter(
     (project) =>
       (!selectedStage.value || project.stage === selectedStage.value) &&
       matchesSearch(
@@ -229,7 +235,7 @@ const filteredProjects = computed(() =>
   ),
 );
 
-const selectedProject = computed(() => projects.find((project) => project.id === selectedProjectId.value) || null);
+const selectedProject = computed(() => scopedProjects.value.find((project) => project.id === selectedProjectId.value) || null);
 
 const kanbanColumns = computed(() => {
   const stages = [...new Set(filteredProjects.value.map((project) => project.stage))];
