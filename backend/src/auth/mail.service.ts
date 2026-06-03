@@ -1,22 +1,26 @@
 import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Resend } from 'resend';
+import * as Brevo from '@getbrevo/brevo';
 
 @Injectable()
 export class MailService {
   private readonly logger = new Logger(MailService.name);
-  private resend: Resend;
+  private apiInstance: Brevo.TransactionalEmailsApi;
 
   constructor(private readonly configService: ConfigService) {
-    const apiKey = this.configService.get<string>('RESEND_API_KEY');
+    const apiKey = this.configService.get<string>('BREVO_API_KEY');
 
     if (!apiKey) {
-      this.logger.error('RESEND_API_KEY não configurada no .env');
+      this.logger.error('BREVO_API_KEY não configurada no .env');
       return;
     }
 
-    this.resend = new Resend(apiKey);
-    this.logger.log('Resend inicializado com sucesso.');
+    this.apiInstance = new Brevo.TransactionalEmailsApi();
+    this.apiInstance.setApiKey(
+      Brevo.TransactionalEmailsApiApiKeys.apiKey,
+      apiKey,
+    );
+    this.logger.log('Brevo inicializado com sucesso.');
   }
 
   async sendOtpEmail(
@@ -24,17 +28,16 @@ export class MailService {
     code: string,
     nomeCompleto: string,
   ): Promise<void> {
-    const apiKey = this.configService.get<string>('RESEND_API_KEY');
-    /* Remetente padrão do Resend (funciona sem domínio verificado).
-       Quando configurar um domínio próprio, troca por algo como
-       "MilaTec <noreply@milatec.com.br>". */
-    const fromAddress =
-      this.configService.get<string>('RESEND_FROM') ||
-      'MilaTec <onboarding@resend.dev>';
+    const apiKey = this.configService.get<string>('BREVO_API_KEY');
+    const fromEmail =
+      this.configService.get<string>('BREVO_FROM_EMAIL') ||
+      'everton.lbrito@souunit.com.br';
+    const fromName =
+      this.configService.get<string>('BREVO_FROM_NAME') || 'MilaTec';
 
     if (!apiKey) {
       throw new InternalServerErrorException(
-        'RESEND_API_KEY precisa estar configurada no .env para envio do código por e-mail.',
+        'BREVO_API_KEY precisa estar configurada no .env para envio do código por e-mail.',
       );
     }
 
@@ -63,24 +66,23 @@ export class MailService {
     `;
 
     try {
-      const { data, error } = await this.resend.emails.send({
-        from: fromAddress,
-        to,
-        subject: 'Seu código de acesso - MilaTec',
-        html,
-      });
+      const sendSmtpEmail = new Brevo.SendSmtpEmail();
+      sendSmtpEmail.subject = 'Seu código de acesso - MilaTec';
+      sendSmtpEmail.htmlContent = html;
+      sendSmtpEmail.sender = { name: fromName, email: fromEmail };
+      sendSmtpEmail.to = [{ email: to }];
 
-      if (error) {
-        this.logger.error(`Resend retornou erro para ${to}: ${JSON.stringify(error)}`);
-        throw new InternalServerErrorException(
-          `Falha ao enviar e-mail: ${error.message || 'erro desconhecido'}`,
-        );
-      }
-
-      this.logger.log(`OTP enviado para ${to} (id: ${data?.id || 'sem id'})`);
+      const response = await this.apiInstance.sendTransacEmail(sendSmtpEmail);
+      this.logger.log(
+        `OTP enviado para ${to} (messageId: ${response.body?.messageId || 'sem id'})`,
+      );
     } catch (error) {
-      this.logger.error(`Erro ao enviar e-mail para ${to}: ${error.message}`);
-      throw error;
+      const errorMessage =
+        error.response?.body?.message || error.message || 'erro desconhecido';
+      this.logger.error(`Erro ao enviar e-mail para ${to}: ${errorMessage}`);
+      throw new InternalServerErrorException(
+        `Falha ao enviar e-mail: ${errorMessage}`,
+      );
     }
   }
-} 
+}
