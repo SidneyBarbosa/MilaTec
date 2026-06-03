@@ -46,23 +46,25 @@
             </span>
             <span class="table__cell">{{ attachment.uploadedAt }}</span>
             <span class="table__cell attachment-actions">
-              <button
-                type="button"
+              
+                :href="attachment.href"
                 class="attachment-action"
-                :aria-label="`Visualizar ${attachment.name}`"
-                @click="openPreview(attachment)"
+                target="_blank"
+                rel="noopener noreferrer"
+                :aria-label="`Visualizar ${attachment.name} em nova aba`"
+                @click="handleOpenInNewTab($event, attachment)"
               >
                 <span class="material-icons" aria-hidden="true">visibility</span>
                 <span>Visualizar</span>
-              </button>
+              </a>
 
-              <a
+              
                 :href="attachment.href"
                 class="attachment-action attachment-action--download"
-                :download="attachment.name"
+                target="_blank"
                 rel="noopener noreferrer"
-                :aria-label="`Baixar ${attachment.name}`"
-                @click="handleDownload($event, attachment)"
+                :aria-label="`Baixar ${attachment.name} em nova aba`"
+                @click="handleOpenInNewTab($event, attachment)"
               >
                 <span class="material-icons" aria-hidden="true">download</span>
                 <span>Baixar</span>
@@ -84,61 +86,6 @@
         Próxima
       </button>
     </nav>
-
-    <div
-      v-if="previewAttachment"
-      class="modal-backdrop"
-      role="presentation"
-      @click.self="closePreview"
-    >
-      <section
-        class="preview-modal"
-        role="dialog"
-        aria-modal="true"
-        :aria-label="`Visualização de ${previewAttachment.name}`"
-      >
-        <header class="preview-modal__header">
-          <div>
-            <span class="category-chip" :class="categoryClass(previewAttachment.category)">
-              {{ previewAttachment.category }}
-            </span>
-            <h3>{{ previewAttachment.name }}</h3>
-            <p>{{ previewAttachment.linkedTypeLabel }} · {{ previewAttachment.linkedRecordName }}</p>
-          </div>
-          <button class="modal-close" type="button" aria-label="Fechar visualização" @click="closePreview">
-            <span class="material-icons" aria-hidden="true">close</span>
-          </button>
-        </header>
-
-        <div class="preview-frame">
-          <iframe
-            v-if="canEmbed(previewAttachment)"
-            :src="previewAttachment.href"
-            title="Pré-visualização do anexo"
-            sandbox="allow-same-origin allow-downloads"
-          />
-          <div v-else class="preview-placeholder">
-            <span class="material-icons" aria-hidden="true">description</span>
-            <strong>Arquivo liberado para esta empresa</strong>
-            <p>Quando a integração estiver conectada, o documento será carregado aqui.</p>
-          </div>
-        </div>
-
-        <footer class="preview-modal__footer">
-          <span>Acesso validado pelo escopo da empresa autenticada.</span>
-          <a
-            :href="previewAttachment.href"
-            class="attachment-action attachment-action--download"
-            :download="previewAttachment.name"
-            rel="noopener noreferrer"
-            @click="handleDownload($event, previewAttachment)"
-          >
-            <span class="material-icons" aria-hidden="true">download</span>
-            <span>Baixar</span>
-          </a>
-        </footer>
-      </section>
-    </div>
     </template>
   </div>
 </template>
@@ -157,7 +104,6 @@ const route = useRoute();
 const router = useRouter();
 const { portalData, isLoading, error } = useClientPortalData();
 const currentPage = ref(1);
-const previewAttachmentId = ref('');
 const searchTerm = ref('');
 const selectedWorkFilterId = ref('');
 const selectedProjectFilterId = ref('');
@@ -217,9 +163,6 @@ const paginatedAttachments = computed(() => {
   const start = (currentPage.value - 1) * pageSize;
   return filteredAttachments.value.slice(start, start + pageSize);
 });
-const previewAttachment = computed(
-  () => attachments.value.find((attachment) => attachment.id === previewAttachmentId.value) || null,
-);
 
 watch(filteredAttachments, () => {
   if (currentPage.value > totalPages.value) currentPage.value = totalPages.value;
@@ -271,17 +214,10 @@ const clearFilters = () => {
   selectedCategory.value = '';
 };
 
-const openPreview = (attachment) => {
-  previewAttachmentId.value = attachment.id;
-};
-
-const closePreview = () => {
-  previewAttachmentId.value = '';
-};
-
-const canEmbed = (attachment) => attachment.href && attachment.href !== '#';
-
-const handleDownload = (event, attachment) => {
+/* Abre o anexo em uma nova aba do navegador.
+   Evita problemas de iframe bloqueado pelo Chrome (URLs do Airtable
+   não permitem embed por segurança). */
+const handleOpenInNewTab = (event, attachment) => {
   if (!attachment.href || attachment.href === '#') {
     event.preventDefault();
   }
@@ -399,14 +335,33 @@ const categoryClass = (category) => {
 }
 
 .attachment-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid rgba(0, 74, 232, 0.16);
   border-radius: 8px;
+  color: var(--primary);
+  background: rgba(0, 74, 232, 0.06);
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
   cursor: pointer;
+}
+
+.attachment-action:hover {
+  background: rgba(0, 74, 232, 0.12);
 }
 
 .attachment-action--download {
   background: rgba(0, 163, 74, 0.08);
   border-color: rgba(0, 163, 74, 0.18);
   color: #087443;
+}
+
+.attachment-action--download:hover {
+  background: rgba(0, 163, 74, 0.16);
 }
 
 .category-chip {
@@ -470,95 +425,6 @@ const categoryClass = (category) => {
   opacity: 0.45;
 }
 
-.modal-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 50;
-  display: grid;
-  place-items: center;
-  padding: 24px;
-  background: rgba(5, 8, 102, 0.48);
-}
-
-.preview-modal {
-  display: grid;
-  gap: 18px;
-  width: min(940px, 100%);
-  max-height: min(820px, calc(100vh - 48px));
-  overflow: auto;
-  padding: 22px;
-  border-radius: 8px;
-  background: var(--card);
-  box-shadow: var(--shadow-lg);
-}
-
-.preview-modal__header,
-.preview-modal__footer {
-  display: flex;
-  justify-content: space-between;
-  gap: 16px;
-  align-items: flex-start;
-}
-
-.preview-modal__header h3 {
-  margin-top: 10px;
-  color: var(--text-strong);
-  font-size: 24px;
-}
-
-.preview-modal__header p,
-.preview-modal__footer span {
-  color: var(--muted);
-  font-size: 14px;
-}
-
-.modal-close {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  border: 1px solid var(--stroke-soft);
-  border-radius: 8px;
-  color: var(--text-strong);
-  background: #f7faff;
-  cursor: pointer;
-}
-
-.preview-frame {
-  min-height: 420px;
-  border: 1px solid var(--stroke-soft);
-  border-radius: 8px;
-  overflow: hidden;
-  background: #f7faff;
-}
-
-.preview-frame iframe {
-  width: 100%;
-  height: 520px;
-  border: none;
-}
-
-.preview-placeholder {
-  display: grid;
-  place-items: center;
-  align-content: center;
-  gap: 10px;
-  min-height: 420px;
-  padding: 24px;
-  text-align: center;
-}
-
-.preview-placeholder .material-icons {
-  color: var(--primary);
-  font-size: 42px;
-}
-
-.preview-placeholder strong {
-  color: var(--text-strong);
-  font-size: 18px;
-}
-
 @media (max-width: 920px) {
   .table__head {
     display: none;
@@ -567,11 +433,6 @@ const categoryClass = (category) => {
   .table__row {
     min-width: 0;
     grid-template-columns: 1fr;
-  }
-
-  .preview-modal__header,
-  .preview-modal__footer {
-    display: grid;
   }
 }
 
@@ -585,15 +446,5 @@ const categoryClass = (category) => {
   .pagination button {
     flex: 1;
   }
-
-  .modal-backdrop {
-    align-items: stretch;
-    padding: 12px;
-  }
-
-  .preview-modal {
-    max-height: calc(100vh - 24px);
-  }
 }
 </style>
-
