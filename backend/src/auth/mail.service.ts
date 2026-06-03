@@ -1,26 +1,18 @@
 import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import * as Brevo from '@getbrevo/brevo';
 
 @Injectable()
 export class MailService {
   private readonly logger = new Logger(MailService.name);
-  private apiInstance: Brevo.TransactionalEmailsApi;
+  private readonly brevoUrl = 'https://api.brevo.com/v3/smtp/email';
 
   constructor(private readonly configService: ConfigService) {
     const apiKey = this.configService.get<string>('BREVO_API_KEY');
-
     if (!apiKey) {
       this.logger.error('BREVO_API_KEY não configurada no .env');
       return;
     }
-
-    this.apiInstance = new Brevo.TransactionalEmailsApi();
-    this.apiInstance.setApiKey(
-      Brevo.TransactionalEmailsApiApiKeys.apiKey,
-      apiKey,
-    );
-    this.logger.log('Brevo inicializado com sucesso.');
+    this.logger.log('Brevo (HTTP) inicializado com sucesso.');
   }
 
   async sendOtpEmail(
@@ -65,23 +57,45 @@ export class MailService {
       </div>
     `;
 
-    try {
-      const sendSmtpEmail = new Brevo.SendSmtpEmail();
-      sendSmtpEmail.subject = 'Seu código de acesso - MilaTec';
-      sendSmtpEmail.htmlContent = html;
-      sendSmtpEmail.sender = { name: fromName, email: fromEmail };
-      sendSmtpEmail.to = [{ email: to }];
+    const payload = {
+      sender: { name: fromName, email: fromEmail },
+      to: [{ email: to }],
+      subject: 'Seu código de acesso - MilaTec',
+      htmlContent: html,
+    };
 
-      const response = await this.apiInstance.sendTransacEmail(sendSmtpEmail);
+    try {
+      const response = await fetch(this.brevoUrl, {
+        method: 'POST',
+        headers: {
+          'api-key': apiKey,
+          'Content-Type': 'application/json',
+          accept: 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const responseBody: any = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        const message =
+          responseBody?.message || responseBody?.code || `HTTP ${response.status}`;
+        this.logger.error(
+          `Brevo retornou erro (${response.status}) para ${to}: ${JSON.stringify(responseBody)}`,
+        );
+        throw new InternalServerErrorException(
+          `Falha ao enviar e-mail: ${message}`,
+        );
+      }
+
       this.logger.log(
-        `OTP enviado para ${to} (messageId: ${response.body?.messageId || 'sem id'})`,
+        `OTP enviado para ${to} (messageId: ${responseBody?.messageId || 'sem id'})`,
       );
     } catch (error) {
-      const errorMessage =
-        error.response?.body?.message || error.message || 'erro desconhecido';
-      this.logger.error(`Erro ao enviar e-mail para ${to}: ${errorMessage}`);
+      if (error instanceof InternalServerErrorException) throw error;
+      this.logger.error(`Erro ao enviar e-mail para ${to}: ${error.message}`);
       throw new InternalServerErrorException(
-        `Falha ao enviar e-mail: ${errorMessage}`,
+        `Falha ao enviar e-mail: ${error.message || 'erro desconhecido'}`,
       );
     }
   }
