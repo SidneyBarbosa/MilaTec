@@ -1,30 +1,22 @@
 import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import * as nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 
 @Injectable()
 export class MailService {
   private readonly logger = new Logger(MailService.name);
-  private transporter: nodemailer.Transporter;
+  private resend: Resend;
 
   constructor(private readonly configService: ConfigService) {
-    /* CORRIGIDO: configuração manual com porta 465 + SSL.
-       Antes: service: 'gmail' (porta 587 TLS) — bloqueada pelo Render Free.
-       Agora: porta 465 com SSL — funciona em hospedagens gratuitas. */
-    this.transporter = nodemailer.createTransport({
-      host: 'smtp.gmail.com',
-      port: 465,
-      secure: true, // true para porta 465 (SSL)
-      auth: {
-        user: this.configService.get<string>('EMAIL_USER'),
-        pass: this.configService.get<string>('EMAIL_PASS'),
-      },
-      /* Timeout maior para ambientes de produção lentos como o Render Free.
-         O timeout padrão é muito curto e gera "Connection timeout". */
-      connectionTimeout: 60_000, // 60 segundos para conectar
-      greetingTimeout: 30_000,   // 30 segundos para o handshake
-      socketTimeout: 60_000,     // 60 segundos por operação
-    });
+    const apiKey = this.configService.get<string>('RESEND_API_KEY');
+
+    if (!apiKey) {
+      this.logger.error('RESEND_API_KEY não configurada no .env');
+      return;
+    }
+
+    this.resend = new Resend(apiKey);
+    this.logger.log('Resend inicializado com sucesso.');
   }
 
   async sendOtpEmail(
@@ -32,12 +24,17 @@ export class MailService {
     code: string,
     nomeCompleto: string,
   ): Promise<void> {
-    const fromEmail = this.configService.get<string>('EMAIL_USER');
-    const appPassword = this.configService.get<string>('EMAIL_PASS');
+    const apiKey = this.configService.get<string>('RESEND_API_KEY');
+    /* Remetente padrão do Resend (funciona sem domínio verificado).
+       Quando configurar um domínio próprio, troca por algo como
+       "MilaTec <noreply@milatec.com.br>". */
+    const fromAddress =
+      this.configService.get<string>('RESEND_FROM') ||
+      'MilaTec <onboarding@resend.dev>';
 
-    if (!fromEmail || !appPassword) {
+    if (!apiKey) {
       throw new InternalServerErrorException(
-        'EMAIL_USER e EMAIL_PASS precisam estar configurados no .env para envio do código por e-mail.',
+        'RESEND_API_KEY precisa estar configurada no .env para envio do código por e-mail.',
       );
     }
 
@@ -66,16 +63,24 @@ export class MailService {
     `;
 
     try {
-      await this.transporter.sendMail({
-        from: `"MilaTec" <${fromEmail}>`,
+      const { data, error } = await this.resend.emails.send({
+        from: fromAddress,
         to,
         subject: 'Seu código de acesso - MilaTec',
         html,
       });
-      this.logger.log(`OTP enviado para ${to}`);
+
+      if (error) {
+        this.logger.error(`Resend retornou erro para ${to}: ${JSON.stringify(error)}`);
+        throw new InternalServerErrorException(
+          `Falha ao enviar e-mail: ${error.message || 'erro desconhecido'}`,
+        );
+      }
+
+      this.logger.log(`OTP enviado para ${to} (id: ${data?.id || 'sem id'})`);
     } catch (error) {
       this.logger.error(`Erro ao enviar e-mail para ${to}: ${error.message}`);
       throw error;
     }
   }
-}
+} 
