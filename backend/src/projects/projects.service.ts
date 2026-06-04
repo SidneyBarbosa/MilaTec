@@ -74,7 +74,7 @@ export class ProjectsService {
       });
       const companyBudgetIds = companyBudgets.map((b) => b.id);
 
-      const belongsToCompany = projectBudgetIds.some((id) =>
+      const belongsToCompany = projectBudgetIds.some((id: string) =>
         companyBudgetIds.includes(id),
       );
 
@@ -96,15 +96,26 @@ export class ProjectsService {
     return {
       id: project.id,
       name: project['Projeto'] || 'Informação em atualização',
-      stage: project['Etapa do projeto'] || 'Informação em atualização',
-      budgetType: project['Tipo de orçamento'] || null,
-      complexity: project['Complexidade'] || null,
-      sentByClient: project['Enviado pelo cliente'] || null,
-      milatecProject: project['Projeto Milatec'] || null,
-      executiveProject: project['Projeto executivo'] || null,
-      weight: project['Peso do projeto (kg)'] || null,
+      stage: project['Etapa do Projeto'] || 'Informação em atualização',
+      projectId: project['Projeto ID'] || null,
+      budgetType: this.normalizeArrayOrString(project['Tipo de orçamento']),
+      businessStage: this.normalizeArrayOrString(project['Etapa do negócio']), //vem do orçamento
+      city: this.normalizeArrayOrString(project['Cidade da obra']),
+      weight: project['Peso do projeto (kg)'] || 0,
+      totalWeight: project['Peso Total'] || 0,
+      largestPart: project['Maior peça'] || null,
+      totalValue: project['Valor total (Projeto)'] || 0,
       linkedBudgets: project['Orçamentos'] || [],
       linkedDeliveries: project['Entregas'] || [],
     };
+  }
+
+  /* Auxiliar: alguns campos (linked records / lookups) vêm como array,
+     outros como string. Normaliza para retornar uma string ou null. */
+  private normalizeArrayOrString(value: any): string | null {
+    if (Array.isArray(value)) {
+      return value.length > 0 ? String(value[0]) : null;
+    }
+    return value || null;
   }
 }
