@@ -430,7 +430,11 @@ const resolveActionIcon = (actionLabel) => {
 
 .kanban-column {
   flex: 0 0 304px;
+  width: 304px;
+  min-width: 304px;
+  max-width: 304px;
   display: grid;
+  grid-template-rows: auto 1fr;
   min-height: 280px;
   border: 1px solid var(--stage-border, var(--stroke-soft));
   border-radius: 8px;
@@ -876,6 +880,9 @@ const resolveActionIcon = (actionLabel) => {
 @media (max-width: 720px) {
   .kanban-column {
     flex: 0 0 280px;
+    width: 280px;
+    min-width: 280px;
+    max-width: 280px;
   }
 
   .modal-backdrop {
