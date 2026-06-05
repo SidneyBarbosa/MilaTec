@@ -100,7 +100,7 @@ export class InstallationsService {
       id: installation.id,
       name: installation['Instalação ID'] || installation['Tipo de serviço'] || 'Obra',
       serviceType: installation['Tipo de serviço'] || 'Informação em atualização',
-      stage: installation['Funil'] || 'Informação em atualização',
+      sstage: this.normalizeArrayOrString(installation['Etapa do negócio (from Orçamentos)']) || 'Informação em atualização',
       startDate: installation['Data de início'] || null,
       endDate: installation['Data de fim'] || null,
       creationDate: installation['Data de criação'] || null,
