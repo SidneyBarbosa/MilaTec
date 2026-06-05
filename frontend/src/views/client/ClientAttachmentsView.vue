@@ -46,24 +46,23 @@
             </span>
             <span class="table__cell">{{ attachment.uploadedAt }}</span>
             <span class="table__cell attachment-actions">
-              <a
-                :href="attachment.href"
+              <button
+                type="button"
                 class="attachment-action"
-                target="_blank"
-                rel="noopener noreferrer"
-                :aria-label="`Visualizar ${attachment.name} em nova aba`"
-                @click="handleOpenInNewTab($event, attachment)"
+                :aria-label="`Visualizar ${attachment.name}`"
+                @click="openPreview(attachment)"
               >
                 <span class="material-icons" aria-hidden="true">visibility</span>
                 <span>Visualizar</span>
-              </a>
+              </button>
+
               <a
                 :href="attachment.href"
                 class="attachment-action attachment-action--download"
                 target="_blank"
                 rel="noopener noreferrer"
-                :aria-label="`Baixar ${attachment.name} em nova aba`"
-                @click="handleOpenInNewTab($event, attachment)"
+                :aria-label="`Baixar ${attachment.name}`"
+                @click="handleDownloadClick($event, attachment)"
               >
                 <span class="material-icons" aria-hidden="true">download</span>
                 <span>Baixar</span>
@@ -85,6 +84,86 @@
         Próxima
       </button>
     </nav>
+
+    <!-- Modal de Preview -->
+    <div
+      v-if="previewAttachment"
+      class="preview-backdrop"
+      role="presentation"
+      @click.self="closePreview"
+    >
+      <section
+        class="preview-modal"
+        role="dialog"
+        aria-modal="true"
+        :aria-label="`Visualização de ${previewAttachment.name}`"
+      >
+        <header class="preview-modal__header">
+          <div class="preview-modal__info">
+            <span class="category-chip" :class="categoryClass(previewAttachment.category)">
+              {{ previewAttachment.category }}
+            </span>
+            <h3>{{ previewAttachment.name }}</h3>
+            <p>{{ previewAttachment.linkedTypeLabel }} · {{ previewAttachment.linkedRecordName }}</p>
+          </div>
+
+          <div class="preview-modal__actions">
+            <a
+              :href="previewAttachment.href"
+              class="preview-action preview-action--download"
+              target="_blank"
+              rel="noopener noreferrer"
+              :aria-label="`Baixar ${previewAttachment.name}`"
+            >
+              <span class="material-icons" aria-hidden="true">download</span>
+              <span>Baixar</span>
+            </a>
+            <button
+              type="button"
+              class="preview-action preview-action--close"
+              aria-label="Fechar visualização"
+              @click="closePreview"
+            >
+              <span class="material-icons" aria-hidden="true">close</span>
+            </button>
+          </div>
+        </header>
+
+        <div class="preview-modal__body">
+          <!-- Preview para imagens -->
+          <img
+            v-if="isImage(previewAttachment)"
+            :src="previewAttachment.href"
+            :alt="previewAttachment.name"
+            class="preview-image"
+          />
+
+          <!-- Preview para PDFs (usa embed que tem mais compatibilidade) -->
+          <iframe
+            v-else-if="isPdf(previewAttachment)"
+            :src="previewAttachment.href"
+            :title="`Visualização de ${previewAttachment.name}`"
+            class="preview-frame"
+          ></iframe>
+
+          <!-- Fallback para arquivos não previsíveis -->
+          <div v-else class="preview-fallback">
+            <span class="material-icons preview-fallback__icon" aria-hidden="true">description</span>
+            <h4>Visualização indisponível neste formato</h4>
+            <p>Este arquivo precisa ser baixado para ser visualizado.</p>
+            <a
+              :href="previewAttachment.href"
+              class="preview-action preview-action--download preview-action--large"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <span class="material-icons" aria-hidden="true">download</span>
+              <span>Baixar arquivo</span>
+            </a>
+          </div>
+        </div>
+      </section>
+    </div>
     </template>
   </div>
 </template>
@@ -107,6 +186,7 @@ const searchTerm = ref('');
 const selectedWorkFilterId = ref('');
 const selectedProjectFilterId = ref('');
 const selectedCategory = ref('');
+const previewAttachment = ref(null);
 const pageSize = 8;
 
 const works = computed(() => portalData.value.works || []);
@@ -213,13 +293,54 @@ const clearFilters = () => {
   selectedCategory.value = '';
 };
 
-/* Abre o anexo em uma nova aba do navegador.
-   Evita problemas de iframe bloqueado pelo Chrome (URLs do Airtable
-   não permitem embed por segurança). */
-const handleOpenInNewTab = (event, attachment) => {
+/* Abre o modal de preview do anexo */
+const openPreview = (attachment) => {
+  if (!attachment.href || attachment.href === '#') return;
+  previewAttachment.value = attachment;
+};
+
+/* Fecha o modal de preview */
+const closePreview = () => {
+  previewAttachment.value = null;
+};
+
+/* Fecha o modal com a tecla ESC */
+const handleEscapeKey = (event) => {
+  if (event.key === 'Escape' && previewAttachment.value) {
+    closePreview();
+  }
+};
+
+/* Adiciona/remove listener da tecla ESC quando modal abre/fecha */
+watch(previewAttachment, (newValue) => {
+  if (typeof window === 'undefined') return;
+  if (newValue) {
+    window.addEventListener('keydown', handleEscapeKey);
+    // Trava o scroll do body enquanto modal está aberto
+    document.body.style.overflow = 'hidden';
+  } else {
+    window.removeEventListener('keydown', handleEscapeKey);
+    document.body.style.overflow = '';
+  }
+});
+
+/* Previne navegação caso href esteja vazio */
+const handleDownloadClick = (event, attachment) => {
   if (!attachment.href || attachment.href === '#') {
     event.preventDefault();
   }
+};
+
+/* Detecta se o anexo é uma imagem pela extensão */
+const isImage = (attachment) => {
+  if (!attachment?.name) return false;
+  return /\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i.test(attachment.name);
+};
+
+/* Detecta se o anexo é um PDF pela extensão */
+const isPdf = (attachment) => {
+  if (!attachment?.name) return false;
+  return /\.pdf$/i.test(attachment.name);
 };
 
 const categoryClass = (category) => {
@@ -425,6 +546,189 @@ const categoryClass = (category) => {
   opacity: 0.45;
 }
 
+/* ========== MODAL DE PREVIEW ========== */
+
+.preview-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(5, 8, 102, 0.58);
+  backdrop-filter: blur(4px);
+  animation: backdrop-fade-in 0.2s ease;
+}
+
+@keyframes backdrop-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.preview-modal {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  width: min(1100px, 100%);
+  height: min(85vh, 900px);
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 30px 80px rgba(5, 8, 102, 0.32);
+  overflow: hidden;
+  animation: modal-slide-up 0.25s ease;
+}
+
+@keyframes modal-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.preview-modal__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 18px;
+  padding: 22px 26px;
+  border-bottom: 1px solid var(--stroke-soft);
+  background: linear-gradient(180deg, #ffffff, #f7f9fc);
+}
+
+.preview-modal__info {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.preview-modal__info h3 {
+  color: var(--text-strong);
+  font-size: 19px;
+  font-weight: 800;
+  line-height: 1.3;
+  word-break: break-word;
+}
+
+.preview-modal__info p {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.preview-modal__actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.preview-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 16px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    transform 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.preview-action:hover {
+  transform: translateY(-1px);
+}
+
+.preview-action--download {
+  background: linear-gradient(180deg, #0aa757, #087443);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(0, 163, 74, 0.28);
+}
+
+.preview-action--download:hover {
+  background: linear-gradient(180deg, #0eb763, #0a8a4f);
+}
+
+.preview-action--large {
+  min-height: 46px;
+  padding: 0 22px;
+  font-size: 15px;
+}
+
+.preview-action--close {
+  width: 40px;
+  padding: 0;
+  border-color: var(--stroke-soft);
+  color: var(--text-strong);
+  background: #ffffff;
+}
+
+.preview-action--close:hover {
+  background: #f5f7fb;
+  border-color: rgba(5, 8, 102, 0.16);
+}
+
+.preview-modal__body {
+  display: grid;
+  place-items: stretch;
+  overflow: hidden;
+  background: #f4f6fa;
+}
+
+.preview-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #ffffff;
+}
+
+.preview-frame {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: #ffffff;
+}
+
+.preview-fallback {
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 14px;
+  padding: 40px;
+  text-align: center;
+}
+
+.preview-fallback__icon {
+  color: var(--primary);
+  font-size: 56px;
+}
+
+.preview-fallback h4 {
+  color: var(--text-strong);
+  font-size: 19px;
+  font-weight: 800;
+}
+
+.preview-fallback p {
+  max-width: 380px;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
 @media (max-width: 920px) {
   .table__head {
     display: none;
@@ -445,6 +749,34 @@ const categoryClass = (category) => {
   .attachment-actions > *,
   .pagination button {
     flex: 1;
+  }
+
+  .preview-backdrop {
+    padding: 0;
+  }
+
+  .preview-modal {
+    width: 100%;
+    height: 100vh;
+    max-height: none;
+    border-radius: 0;
+  }
+
+  .preview-modal__header {
+    padding: 16px 18px;
+  }
+
+  .preview-modal__info h3 {
+    font-size: 16px;
+  }
+
+  .preview-action span:last-child {
+    display: none;
+  }
+
+  .preview-action--download {
+    width: 44px;
+    padding: 0;
   }
 }
 </style>
