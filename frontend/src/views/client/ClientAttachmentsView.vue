@@ -316,7 +316,6 @@ watch(previewAttachment, (newValue) => {
   if (typeof window === 'undefined') return;
   if (newValue) {
     window.addEventListener('keydown', handleEscapeKey);
-    // Trava o scroll do body enquanto modal está aberto
     document.body.style.overflow = 'hidden';
   } else {
     window.removeEventListener('keydown', handleEscapeKey);
