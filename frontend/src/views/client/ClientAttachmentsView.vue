@@ -264,6 +264,7 @@ const categoryClass = (category) => {
     transform: rotate(360deg);
   }
 }
+
 .table-card {
   padding: 0;
 }
