@@ -100,6 +100,7 @@ export class DeliveriesService {
   private mapDelivery(delivery: any) {
     return {
       id: delivery.id,
+      name: delivery['Etapa de entrega'] || 'Informação em atualização',
       stage: delivery['Etapa de entrega'] || 'Informação em atualização',
       value: delivery['Valor'] || null,
       city: delivery['Cidade da obra'] || null,
