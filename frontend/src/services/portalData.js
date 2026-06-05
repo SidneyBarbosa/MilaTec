@@ -90,13 +90,9 @@ function adaptClientPortalData(dashboard) {
 
     return {
       id: inst.id,
-      name: inst.serviceType || 'Obra',
+      name: inst.name || inst.serviceType || 'Obra',
       city: inst.city || 'Local não informado',
-      stage: inst.endDate
-        ? 'Concluída'
-        : inst.startDate
-          ? 'Em andamento'
-          : 'Aguardando início',
+      stage: inst.stage || 'Informação em atualização',
       budgetType: firstBudget?.budgetType || 'Tipo não informado',
       linkedProjects,
       linkedDeliveries,

@@ -109,9 +109,7 @@ export class ProjectsService {
       linkedDeliveries: project['Entregas'] || [],
     };
   }
-
-  /* Auxiliar: alguns campos (linked records / lookups) vêm como array,
-     outros como string. Normaliza para retornar uma string ou null. */
+  
   private normalizeArrayOrString(value: any): string | null {
     if (Array.isArray(value)) {
       return value.length > 0 ? String(value[0]) : null;

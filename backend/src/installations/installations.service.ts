@@ -98,19 +98,30 @@ export class InstallationsService {
   private mapInstallation(installation: any) {
     return {
       id: installation.id,
+      name: installation['Instalação ID'] || installation['Tipo de serviço'] || 'Obra',
       serviceType: installation['Tipo de serviço'] || 'Informação em atualização',
+      stage: installation['Funil'] || 'Informação em atualização',
       startDate: installation['Data de início'] || null,
       endDate: installation['Data de fim'] || null,
+      creationDate: installation['Data de criação'] || null,
+      deliveryAddress: this.normalizeArrayOrString(installation['Endereço de entrega (from Orçamentos)']),
+      city: this.normalizeArrayOrString(installation['Cidade da obra (from Orçamentos)']),
       assemblyDetails: installation['Detalhes da montagem'] || null,
-      deliveryAddress: installation['Endereço de entrega (from Orçamentos)'] || null,
-      city: installation['Cidade da obra (from Orçamentos)'] || null,
       programmedDays: installation['Nº dias programados'] || null,
-      executedDays: installation['Nº dias executados'] || null,
-      expenses: installation['Despesas'] || null,
-      accountClosing: installation['Fechamento de contas'] || null,
-      totalSpent: installation['Valor Total Gasto'] || null,
       installationId: installation['Instalação ID'] || null,
+      businessStage: this.normalizeArrayOrString(
+        installation['Etapa do negócio (from Orçamentos)']),
+      budgetType: this.normalizeArrayOrString(
+        installation['Tipo de orçamento (from Orçamentos)']),
       linkedBudgets: installation['Orçamentos'] || [],
+      linkedTeam: installation['Equipe de instalação'] || [],
     };
+  }
+
+  private normalizeArrayOrString(value: any): string | null {
+    if (Array.isArray(value)) {
+      return value.length > 0 ? String(value[0]) : null;
+    }
+    return value || null;
   }
 }
