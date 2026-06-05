@@ -532,12 +532,33 @@ const resolveActionIcon = (actionLabel) => {
     transform: rotate(360deg);
   }
 }
+
 .kanban-board {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 304px));
+  display: flex;
   gap: 14px;
-  align-items: start;
-  justify-content: start;
+  align-items: stretch;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 12px;
+  scrollbar-width: thin;
+}
+
+.kanban-board::-webkit-scrollbar {
+  height: 10px;
+}
+
+.kanban-board::-webkit-scrollbar-track {
+  background: rgba(5, 8, 102, 0.05);
+  border-radius: 5px;
+}
+
+.kanban-board::-webkit-scrollbar-thumb {
+  background: rgba(0, 74, 232, 0.25);
+  border-radius: 5px;
+}
+
+.kanban-board::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 74, 232, 0.4);
 }
 
 .board-empty {
@@ -549,6 +570,7 @@ const resolveActionIcon = (actionLabel) => {
 }
 
 .kanban-column {
+  flex: 0 0 304px;
   display: grid;
   min-height: 280px;
   border: 1px solid var(--stage-border, var(--stroke-soft));
@@ -1082,8 +1104,8 @@ const resolveActionIcon = (actionLabel) => {
 }
 
 @media (max-width: 720px) {
-  .kanban-board {
-    grid-template-columns: 1fr;
+  .kanban-column {
+    flex: 0 0 280px;
   }
 
   .modal-backdrop {
@@ -1124,4 +1146,3 @@ const resolveActionIcon = (actionLabel) => {
   }
 }
 </style>
-
