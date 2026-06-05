@@ -46,7 +46,7 @@
             </span>
             <span class="table__cell">{{ attachment.uploadedAt }}</span>
             <span class="table__cell attachment-actions">
-              <a>
+              <a
                 :href="attachment.href"
                 class="attachment-action"
                 target="_blank"
@@ -57,7 +57,7 @@
                 <span class="material-icons" aria-hidden="true">visibility</span>
                 <span>Visualizar</span>
               </a>
-              <a>
+              <a
                 :href="attachment.href"
                 class="attachment-action attachment-action--download"
                 target="_blank"
