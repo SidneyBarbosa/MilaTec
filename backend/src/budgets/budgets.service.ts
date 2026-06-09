@@ -62,16 +62,102 @@ export class BudgetsService {
   private mapBudget(budget: any) {
     return {
       id: budget.id,
-      product: budget['Produto'] || 'Informação em atualização',
-      value: budget['Valor'] || null,
-      budgetType: budget['Tipo de orçamento'] || null,
+
+      /* Nome da obra = campo "Orçamentos" */
+      name: this.cleanText(budget['Orçamentos']) || 'Informação em atualização',
+
+      /* Produto: prefere o lookup dos Projetos; cai para o campo Produto simples */
+      product:
+        this.normalizeArrayOrString(budget['Produto (from Projetos)']) ||
+        this.normalizeArrayOrString(budget['Produto']) ||
+        'Informação em atualização',
+
+      /* Valor com cascata de fallback (os campos vêm zerados em alguns casos):
+         1) Valor Total do Orçamento (Projetos)
+         2) Valor total das entregas (from Projetos)
+         3) Valor instalação                                                   */
+      value: this.firstPositiveNumber([
+        budget['Valor Total do Orçamento (Projetos)'],
+        budget['Valor total das entregas (from Projetos)'],
+        budget['Valor instalação'],
+      ]),
+
+      budgetType: this.normalizeArrayOrString(budget['Tipo de orçamento']),
+
+      /* Etapa do negócio = a etapa que a Lorena pediu (ex: "Concluído") */
       stage: budget['Etapa do negócio'] || 'Informação em atualização',
+
+      /* Etapa do projeto (campo separado, útil no kanban de projetos) */
+      projectStage: budget['Etapa do projeto'] || null,
+
       closingDate: budget['Data de fechamento'] || null,
       creationDate: budget['Data de criação'] || null,
       city: budget['Cidade da obra'] || null,
-      sentByClient: budget['Enviado pelo cliente'] || null,
+      deliveryAddress: this.cleanText(budget['Endereço de entrega']) || null,
+
+      salesChannel: budget['Canal de vendas'] || null,
+      totalQuantity: budget['Quantidade'] ?? null,
+
+      /* Relacionamentos */
       linkedProjects: budget['Projetos'] || [],
       linkedDeliveries: budget['Entregas'] || [],
+
+      /* Anexos do próprio orçamento (para a página de detalhe da obra) */
+      attachments: this.extractBudgetAttachments(budget),
     };
+  }
+
+  /* Reúne todos os anexos que ficam direto na tabela Orçamentos. */
+  private extractBudgetAttachments(budget: any) {
+    const attachmentFields = [
+      { field: 'Nota Fiscal (anexo)', category: 'Nota Fiscal' },
+      { field: 'Proposta comercial (anexo)', category: 'Proposta Comercial' },
+      { field: 'Pedido de Compra (anexo)', category: 'Pedido de Compra' },
+      { field: 'Contrato (anexo)', category: 'Contrato' },
+      { field: 'Contrato instalação (anexo)', category: 'Contrato de Instalação' },
+      { field: 'CNPJ & CNO (anexo)', category: 'CNPJ e CNO' },
+      { field: 'Enviado pelo cliente', category: 'Enviado pelo Cliente' },
+    ];
+
+    const result: any[] = [];
+    attachmentFields.forEach(({ field, category }) => {
+      const value = budget[field];
+      if (Array.isArray(value)) {
+        value.forEach((att: any) => {
+          if (att && att.url) {
+            result.push({
+              id: att.id,
+              filename: att.filename || 'arquivo-sem-nome',
+              url: att.url,
+              size: att.size || null,
+              type: att.type || null,
+              category,
+            });
+          }
+        });
+      }
+    });
+    return result;
+  }
+
+  /* Retorna o primeiro número > 0 de uma lista de candidatos (ou null). */
+  private firstPositiveNumber(candidates: any[]): number | null {
+    for (const c of candidates) {
+      const n = Number(c);
+      if (!isNaN(n) && n > 0) return n;
+    }
+    return null;
+  }
+
+  private cleanText(value: any): string | null {
+    if (typeof value === 'string') return value.trim();
+    return this.normalizeArrayOrString(value);
+  }
+
+  private normalizeArrayOrString(value: any): string | null {
+    if (Array.isArray(value)) {
+      return value.length > 0 ? String(value[0]) : null;
+    }
+    return value || null;
   }
 }

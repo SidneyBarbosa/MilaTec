@@ -6,7 +6,6 @@ import { CompanyModule } from '../company/company.module';
 import { BudgetsModule } from '../budgets/budgets.module';
 import { ProjectsModule } from '../projects/projects.module';
 import { DeliveriesModule } from '../deliveries/deliveries.module';
-import { InstallationsModule } from '../installations/installations.module';
 import { DocumentsModule } from '../documents/documents.module';
 
 @Module({
@@ -16,7 +15,6 @@ import { DocumentsModule } from '../documents/documents.module';
     BudgetsModule,
     ProjectsModule,
     DeliveriesModule,
-    InstallationsModule,
     DocumentsModule,
   ],
   controllers: [DashboardController],
