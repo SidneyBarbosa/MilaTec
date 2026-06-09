@@ -47,213 +47,185 @@ function adaptClientPortalData(dashboard) {
     budgets = [],
     projects = [],
     deliveries = [],
-    installations = [],
     documents = [],
   } = dashboard;
 
-  // Mapas para enriquecer os relacionamentos
+  // Mapas auxiliares
   const budgetById = new Map(budgets.map((b) => [b.id, b]));
-  const installationByBudgetId = new Map();
-  installations.forEach((inst) => {
-    (inst.linkedBudgets || []).forEach((budgetId) => {
-      installationByBudgetId.set(budgetId, inst);
-    });
+  const projectById = new Map(projects.map((p) => [p.id, p]));
+  const deliveryById = new Map(deliveries.map((d) => [d.id, d]));
+
+  // ---------------------------------------------------------------------------
+  // OBRAS = ORÇAMENTOS
+  // Cada orçamento da empresa vira uma "obra" no portal. Projetos e entregas
+  // são vinculados a partir dos próprios campos do orçamento (linkedProjects /
+  // linkedDeliveries) — e não mais da tabela Instalações.
+  // ---------------------------------------------------------------------------
+  const adaptedWorks = budgets.map((budget) => {
+    const linkedProjects = (budget.linkedProjects || [])
+      .map((id) => projectById.get(id))
+      .filter(Boolean);
+    const linkedDeliveries = (budget.linkedDeliveries || [])
+      .map((id) => deliveryById.get(id))
+      .filter(Boolean);
+
+    return {
+      id: budget.id,
+      name: budget.name || 'Obra',
+      city: budget.city || 'Local não informado',
+      stage: budget.stage || 'Informação em atualização',
+      budgetType: budget.budgetType || 'Tipo não informado',
+      product: budget.product || 'Informação em atualização',
+      value: budget.value,
+      formattedValue: formatCurrency(budget.value),
+      closingDate: formatDate(budget.closingDate),
+      deliveryAddress: budget.deliveryAddress || 'Endereço não informado',
+      linkedProjects,
+      linkedDeliveries,
+      attachments: budget.attachments || [],
+    };
   });
 
-  // Adaptar orçamentos
+  // Adaptar orçamentos (lista própria do módulo Orçamentos)
   const adaptedBudgets = budgets.map((budget) => ({
     id: budget.id,
-    name: budget.product || 'Orçamento',
+    name: budget.name || budget.product || 'Orçamento',
     value: budget.value,
     formattedValue: formatCurrency(budget.value),
     stage: budget.stage,
     budgetType: budget.budgetType || 'Tipo não informado',
     closingDate: formatDate(budget.closingDate),
     city: budget.city || 'Local não informado',
-    active: !budget.closingDate, // ativo enquanto não fechou
+    active: budget.stage ? isStageInProgress(budget.stage) : true,
     linkedProjects: budget.linkedProjects || [],
     linkedDeliveries: budget.linkedDeliveries || [],
   }));
 
-  // Adaptar instalações (obras)
-  const adaptedWorks = installations.map((inst) => {
-    const linkedBudgetIds = inst.linkedBudgets || [];
-    const linkedProjects = projects.filter((p) =>
-      (p.linkedBudgets || []).some((bId) => linkedBudgetIds.includes(bId)),
-    );
-    const linkedDeliveries = deliveries.filter((d) =>
-      (d.linkedBudgets || []).some((bId) => linkedBudgetIds.includes(bId)),
-    );
-    const firstBudget = linkedBudgetIds
-      .map((id) => budgetById.get(id))
-      .find(Boolean);
-
-    return {
-      id: inst.id,
-      name: inst.name || inst.serviceType || 'Obra',
-      city: inst.city || 'Local não informado',
-      stage: inst.stage || 'Informação em atualização',
-      budgetType: firstBudget?.budgetType || 'Tipo não informado',
-      linkedProjects,
-      linkedDeliveries,
-    };
-  });
-
-  // Adaptar projetos
+  // Adaptar projetos — vinculados ao orçamento (obra) correto
   const adaptedProjects = projects.map((project) => {
-    const linkedBudget = (project.linkedBudgets || [])
-      .map((id) => budgetById.get(id))
-      .find(Boolean);
-    const linkedInstallation = (project.linkedBudgets || [])
-      .map((id) => installationByBudgetId.get(id))
-      .find(Boolean);
+    // Encontra o orçamento que referencia este projeto
+    const parentBudget = budgets.find((b) =>
+      (b.linkedProjects || []).includes(project.id),
+    );
 
     return {
       id: project.id,
-      workId: linkedInstallation?.id || '',
-      workName: linkedInstallation?.serviceType || 'Obra não vinculada',
+      workId: parentBudget?.id || '',
+      workName: parentBudget?.name || 'Obra não vinculada',
       name: project.name,
-      product: project.budgetType || 'Produto não informado',
-      location: linkedInstallation?.city || linkedBudget?.city || 'Local não informado',
+      product: project.budgetType || project.product || 'Produto não informado',
+      location: parentBudget?.city || 'Local não informado',
       type: project.budgetType || 'Tipo não informado',
       stage: project.stage,
       quantity: project.weight ? `${project.weight} kg` : 'Quantidade não informada',
       unitValue: 'A informar',
-      totalValue: linkedBudget?.value ? formatCurrency(linkedBudget.value) : 'A informar',
+      totalValue: parentBudget?.value
+        ? formatCurrency(parentBudget.value)
+        : 'A informar',
       inProgress: isStageInProgress(project.stage),
     };
   });
 
-  // Mapa de projetos
-  const projectById = new Map(adaptedProjects.map((p) => [p.id, p]));
+  const adaptedProjectById = new Map(adaptedProjects.map((p) => [p.id, p]));
 
-  // Adaptar entregas
+  // Adaptar entregas — vinculadas ao orçamento (obra) correto
   const adaptedDeliveries = deliveries.map((delivery) => {
-    const linkedBudget = (delivery.linkedBudgets || [])
+    const parentBudget = (delivery.linkedBudgets || [])
       .map((id) => budgetById.get(id))
       .find(Boolean);
-    const linkedInstallation = (delivery.linkedBudgets || [])
-      .map((id) => installationByBudgetId.get(id))
-      .find(Boolean);
-    const linkedProject = (linkedBudget?.linkedProjects || [])
-      .map((id) => projectById.get(id))
+    const linkedProject = (parentBudget?.linkedProjects || [])
+      .map((id) => adaptedProjectById.get(id))
       .find(Boolean);
 
     const hasDate = Boolean(delivery.deliveryDate);
 
     return {
       id: delivery.id,
+      workId: parentBudget?.id || '',
+      workName: parentBudget?.name || 'Obra não vinculada',
       name: `Lote — ${delivery.stage || 'Entrega'}`,
       date: formatDate(delivery.deliveryDate),
       displayDate: formatDate(delivery.deliveryDate),
+      invoiceDate: formatDate(delivery.deliveryDate),
       hasDate,
       quantity: delivery.quantity ? `${delivery.quantity} un.` : 'A definir',
+      value: delivery.value ? formatCurrency(delivery.value) : 'A informar',
       status: delivery.stage || 'Programada',
+      stage: delivery.stage || 'Programada',
       tone: getDeliveryTone(delivery.stage),
       projectName: linkedProject?.name || 'Projeto não vinculado',
-      workName: linkedInstallation?.serviceType || 'Obra não vinculada',
-      deliveryAddress: linkedInstallation?.deliveryAddress || delivery.city || 'Endereço não informado',
+      deliveryAddress:
+        parentBudget?.deliveryAddress || delivery.city || 'Endereço não informado',
+      invoiceAttachment: null,
+      packingListAttachment: null,
+      purchaseOrderAttachment: null,
     };
   });
 
-  // Adaptar anexos
-const adaptedAttachments = documents.map((doc) => {
-  // entityType normalizado para o filtro do front (sem acento, minúsculo)
-  let entityType = 'documento';
-  let linkedTypeLabel = 'Documento';
+  // ---------------------------------------------------------------------------
+  // ANEXOS / DOCUMENTOS
+  // Vêm de Orçamentos e Entregas (Instalações foi removido no backend).
+  // Cada documento traz budgetId/budgetName para o vínculo com a obra.
+  // ---------------------------------------------------------------------------
+  const adaptedAttachments = documents.map((doc) => {
+    let entityType = 'documento';
+    let linkedTypeLabel = 'Documento';
 
-  if (doc.source === 'Orçamentos') {
-    entityType = 'orcamento';
-    linkedTypeLabel = 'Orçamento';
-  } else if (doc.source === 'Instalações') {
-    entityType = 'projeto';
-    linkedTypeLabel = 'Obra';
-  } else if (doc.source === 'Entregas') {
-    entityType = 'entrega';
-    linkedTypeLabel = 'Entrega';
-  }
-
-  // Tenta encontrar o nome do registro vinculado para exibir
-  let linkedRecordName = doc.recordId || '-';
-  if (doc.source === 'Orçamentos') {
-    const budget = budgetById.get(doc.recordId);
-    if (budget) {
-      linkedRecordName = Array.isArray(budget.product)
-        ? budget.product[0]
-        : budget.product || 'Orçamento';
+    if (doc.source === 'Orçamentos') {
+      entityType = 'orcamento';
+      linkedTypeLabel = 'Obra';
+    } else if (doc.source === 'Entregas') {
+      entityType = 'entrega';
+      linkedTypeLabel = 'Entrega';
     }
-  } else if (doc.source === 'Instalações') {
-    const installation = installations.find((i) => i.id === doc.recordId);
-    if (installation) {
-      linkedRecordName = installation.installationId || installation.serviceType || 'Instalação';
-    }
-  } else if (doc.source === 'Entregas') {
-    const delivery = deliveries.find((d) => d.id === doc.recordId);
-    if (delivery) {
-      linkedRecordName = `Entrega ${delivery.deliveryDate || ''}`.trim();
-    }
-  }
 
-  // Identifica obras e projetos relacionados (para os filtros da tela)
-  const relatedWorkIds = [];
-  const relatedWorkNames = [];
-  const relatedProjectIds = [];
-  const relatedProjectNames = [];
+    // Nome da obra/orçamento vinculado
+    const linkedRecordName =
+      doc.budgetName ||
+      budgetById.get(doc.budgetId)?.name ||
+      budgetById.get(doc.recordId)?.name ||
+      doc.recordId ||
+      '-';
 
-  if (doc.source === 'Orçamentos') {
-    const budget = budgetById.get(doc.recordId);
-    if (budget) {
-      // Projetos vinculados ao orçamento
-      (budget.linkedProjects || []).forEach((projectId) => {
-        const project = projects.find((p) => p.id === projectId);
+    // Obras e projetos relacionados (para os filtros da tela)
+    const relatedWorkIds = [];
+    const relatedWorkNames = [];
+    const relatedProjectIds = [];
+    const relatedProjectNames = [];
+
+    const parentBudget =
+      budgetById.get(doc.budgetId) || budgetById.get(doc.recordId);
+
+    if (parentBudget) {
+      relatedWorkIds.push(parentBudget.id);
+      relatedWorkNames.push(parentBudget.name);
+
+      (parentBudget.linkedProjects || []).forEach((projectId) => {
+        const project = projectById.get(projectId);
         if (project) {
           relatedProjectIds.push(project.id);
           relatedProjectNames.push(project.name);
         }
       });
-      // Obras (instalações) vinculadas ao orçamento
-      const linkedInstallation = installationByBudgetId.get(budget.id);
-      if (linkedInstallation) {
-        relatedWorkIds.push(linkedInstallation.id);
-        relatedWorkNames.push(linkedInstallation.serviceType || 'Obra');
-      }
     }
-  } else if (doc.source === 'Instalações') {
-    const installation = installations.find((i) => i.id === doc.recordId);
-    if (installation) {
-      relatedWorkIds.push(installation.id);
-      relatedWorkNames.push(installation.serviceType || 'Obra');
-    }
-  } else if (doc.source === 'Entregas') {
-    const delivery = deliveries.find((d) => d.id === doc.recordId);
-    if (delivery) {
-      (delivery.linkedBudgets || []).forEach((budgetId) => {
-        const inst = installationByBudgetId.get(budgetId);
-        if (inst && !relatedWorkIds.includes(inst.id)) {
-          relatedWorkIds.push(inst.id);
-          relatedWorkNames.push(inst.serviceType || 'Obra');
-        }
-      });
-    }
-  }
 
-  return {
-    id: doc.id,
-    name: doc.filename,
-    category: doc.category || 'Documento',
-    uploadedAt: 'Disponível',
-    href: doc.url,
-    actionLabel: 'Baixar',
-    entityType,
-    entityId: doc.recordId,
-    linkedTypeLabel,
-    linkedRecordName,
-    relatedWorkIds,
-    relatedWorkNames,
-    relatedProjectIds,
-    relatedProjectNames,
-  };
-});
+    return {
+      id: doc.id,
+      name: doc.filename,
+      category: doc.category || 'Documento',
+      uploadedAt: 'Disponível',
+      href: doc.url,
+      actionLabel: 'Baixar',
+      entityType,
+      entityId: doc.budgetId || doc.recordId,
+      linkedTypeLabel,
+      linkedRecordName,
+      relatedWorkIds,
+      relatedWorkNames,
+      relatedProjectIds,
+      relatedProjectNames,
+    };
+  });
 
   return {
     company: {
