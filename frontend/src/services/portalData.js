@@ -354,6 +354,7 @@ function collectAttachments(record, sourceLabel, clientName = 'MilaTec') {
     );
 }
 
+//
 function adaptAdminPortalData(raw) {
   const companies = raw?.companies || [];
   const users = raw?.users || [];
